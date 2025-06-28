@@ -24,7 +24,7 @@ def index():
 def buscar():
     correo_input = request.json.get('correo')
     filtros = [
-        "Netflix: Tu código de inicio de sesión",
+        #"Netflix: Tu código de inicio de sesión",
         "Importante: Cómo actualizar tu Hogar con Netflix",
         "Tu código de acceso temporal de Netflix"
     ]
