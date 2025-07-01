@@ -5,8 +5,13 @@ from dotenv import load_dotenv
 
 from flask import Flask, request, render_template
 from flask_login import LoginManager
-from models import db, Cliente, Cuenta, AdminUser
+from models import Cliente, Cuenta, AdminUser
 from panelAdmin import panel_bp
+
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+
+import asyncio
 
 # --------------------------
 # ✅ Cargar .env
@@ -30,11 +35,15 @@ app = Flask(__name__)
 app.secret_key = SECRET_KEY
 
 # --------------------------
-# ✅ Configurar PostgreSQL con psycopg2-binary
+# ✅ Motor ASYNC y sesión
 # --------------------------
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db.init_app(app)
+engine = create_async_engine(DATABASE_URL, echo=True)
+
+AsyncSessionLocal = sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False
+)
 
 # --------------------------
 # ✅ Configurar Login Manager
@@ -44,8 +53,9 @@ login_manager.init_app(app)
 login_manager.login_view = 'panel.login'
 
 @login_manager.user_loader
-def load_user(user_id):
-    return AdminUser.query.get(int(user_id))
+async def load_user(user_id):
+    async with AsyncSessionLocal() as session:
+        return await session.get(AdminUser, int(user_id))
 
 # --------------------------
 # ✅ Registrar Blueprints
@@ -60,30 +70,34 @@ def index():
     return render_template('index.html')
 
 # --------------------------
-# 🔍 Ruta de búsqueda
+# 🔍 Ruta de búsqueda ASYNC
 # --------------------------
 @app.route('/buscar', methods=['POST'])
-def buscar():
+async def buscar():
     correo_input = request.values.get('correo', '').strip()
 
     if not correo_input:
         return "❌ Debes enviar un correo válido."
 
-    cliente = Cliente.query.filter(Cliente.cuentas.any(Cuenta.correo == correo_input)).first()
-    cuentas = Cuenta.query.filter_by(correo=correo_input).all()
+    async with AsyncSessionLocal() as session:
+        cliente = await session.scalar(
+            Cliente.query.filter(Cliente.cuentas.any(Cuenta.correo == correo_input)).limit(1)
+        )
 
-    # Filtros base
+        cuentas = await session.execute(
+            Cuenta.query.filter_by(correo=correo_input)
+        )
+        cuentas = cuentas.scalars().all()
+
     filtros = [
         "Importante: Cómo actualizar tu Hogar con Netflix",
         "Tu código de acceso temporal de Netflix"
     ]
 
-    # Filtro adicional por cliente
     if cliente and cliente.filtro_netflix:
         filtros.append("Netflix: Tu código de inicio de sesión")
 
     try:
-        # ✅ Conexión IMAP
         mail = imaplib.IMAP4_SSL(IMAP_SERVER, IMAP_PORT)
         mail.login(IMAP_USER, IMAP_PASS)
         mail.select("inbox")
@@ -140,6 +154,10 @@ def buscar():
 # 🚀 Ejecutar localmente
 # --------------------------
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
+    async def run():
+        async with engine.begin() as conn:
+            # Aquí deberías usar Alembic en producción
+            pass
+
+    asyncio.run(run())
     app.run(host='0.0.0.0', port=5000)
