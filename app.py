@@ -18,6 +18,7 @@ IMAP_PASS = os.getenv("IMAP_PASS")
 IMAP_SERVER = os.getenv("IMAP_SERVER")
 IMAP_PORT = int(os.getenv("IMAP_PORT", 993))
 DATABASE_URL = os.getenv("DATABASE_URL")
+SECRET_KEY = os.getenv("SECRET_KEY", "SUPER_SECRET")
 
 if not all([IMAP_USER, IMAP_PASS, IMAP_SERVER, IMAP_PORT, DATABASE_URL]):
     raise Exception("❌ ERROR: Verifica tu archivo .env (IMAP y DATABASE_URL)")
@@ -26,17 +27,17 @@ if not all([IMAP_USER, IMAP_PASS, IMAP_SERVER, IMAP_PORT, DATABASE_URL]):
 # ✅ Inicializar Flask
 # --------------------------
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "SUPER_SECRET")
+app.secret_key = SECRET_KEY
 
 # --------------------------
-# ✅ Configurar solo PostgreSQL
+# ✅ Configurar PostgreSQL con psycopg2-binary
 # --------------------------
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 # --------------------------
-# ✅ Login Manager
+# ✅ Configurar Login Manager
 # --------------------------
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -47,19 +48,19 @@ def load_user(user_id):
     return AdminUser.query.get(int(user_id))
 
 # --------------------------
-# ✅ Registrar Blueprint
+# ✅ Registrar Blueprints
 # --------------------------
 app.register_blueprint(panel_bp)
 
 # --------------------------
-# 🏠 Home
+# 🏠 Ruta principal
 # --------------------------
 @app.route('/')
 def index():
     return render_template('index.html')
 
 # --------------------------
-# 🔍 Buscar código
+# 🔍 Ruta de búsqueda
 # --------------------------
 @app.route('/buscar', methods=['POST'])
 def buscar():
@@ -71,15 +72,18 @@ def buscar():
     cliente = Cliente.query.filter(Cliente.cuentas.any(Cuenta.correo == correo_input)).first()
     cuentas = Cuenta.query.filter_by(correo=correo_input).all()
 
+    # Filtros base
     filtros = [
         "Importante: Cómo actualizar tu Hogar con Netflix",
         "Tu código de acceso temporal de Netflix"
     ]
 
+    # Filtro adicional por cliente
     if cliente and cliente.filtro_netflix:
         filtros.append("Netflix: Tu código de inicio de sesión")
 
     try:
+        # ✅ Conexión IMAP
         mail = imaplib.IMAP4_SSL(IMAP_SERVER, IMAP_PORT)
         mail.login(IMAP_USER, IMAP_PASS)
         mail.select("inbox")
@@ -138,4 +142,4 @@ def buscar():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)
