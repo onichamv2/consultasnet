@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Resultado de Búsqueda{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Resultado de búsqueda</h2>
+
+<h5>Cliente: {{ cliente.nombre }} — 📞 {{ cliente.telefono }}</h5>
+
+<table class="table table-bordered table-striped mt-3">
+  <thead class="thead-dark">
+    <tr>
+      <th>ID</th>
+      <th>Correo</th>
+      <th>Fecha Compra</th>
+      <th>Fecha Expiración</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for cuenta in cuentas %}
+    <tr>
+      <td>{{ cuenta.id }}</td>
+      <td>{{ cuenta.correo }}</td>
+      <td>{{ cuenta.fecha_compra }}</td>
+      <td>{{ cuenta.fecha_expiracion }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if mensaje %}
+  <div class="card mt-5 shadow-sm">
+    <div class="card-header bg-danger text-white">
+      📧 Correo Detectado — Filtro Activo
+    </div>
+    <div class="card-body p-4" style="white-space: normal;">
+      <div class="border rounded p-3" style="background: #fff;">
+        {{ mensaje | safe }}
+      </div>
+    </div>
+  </div>
+{% else %}
+  <div class="alert alert-warning mt-4">
+    No se encontró mensaje filtrado para este correo.
+  </div>
+{% endif %}
+
+<a href="{{ url_for('panel.dashboard') }}" class="btn btn-secondary mt-4">
+  🔙 Volver al Dashboard
+</a>
+{% endblock %}

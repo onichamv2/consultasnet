@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard MEMORIANET2025{% endblock %}
+
+{% block content %}
+<h1>Dashboard MEMORIANET2025</h1>
+
+<!-- 🔍 Formulario de búsqueda de correo -->
+<form action="{{ url_for('panel.buscar_correo') }}" method="GET" class="d-flex align-items-center mb-4" style="max-width: 600px;">
+  <input type="text"
+         name="correo"
+         class="form-control form-control-lg me-2"
+         placeholder="Buscar por correo o teléfono..."
+         style="flex: 1;">
+  <button type="submit" class="btn btn-primary btn-lg">Buscar</button>
+</form>
+
+<!-- 🧩 Tarjetas estadísticas -->
+<div class="row g-3">
+  <div class="col-md-3">
+    <div class="card bg-primary text-white p-3 shadow-sm">
+      <h6 class="mb-1">Total Clientes</h6>
+      <h2 class="mb-0">{{ total_clientes }}</h2>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card bg-success text-white p-3 shadow-sm">
+      <h6 class="mb-1">Total Cuentas</h6>
+      <h2 class="mb-0">{{ total_cuentas }}</h2>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card bg-warning text-white p-3 shadow-sm">
+      <h6 class="mb-1">Cuentas Activas</h6>
+      <h2 class="mb-0">{{ cuentas_activas or (total_cuentas - cuentas_vencidas) }}</h2>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card bg-danger text-white p-3 shadow-sm">
+      <h6 class="mb-1">Cuentas Vencidas</h6>
+      <h2 class="mb-0">{{ cuentas_vencidas }}</h2>
+    </div>
+  </div>
+</div>
+{% endblock %}

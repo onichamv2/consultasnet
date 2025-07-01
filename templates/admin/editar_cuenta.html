@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Editar Cuenta{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">Editar Cuenta</h4>
+    </div>
+    <div class="card-body">
+      <form method="POST">
+        <div class="mb-3">
+          <label class="form-label">Correo</label>
+          <input type="email" name="correo" value="{{ cuenta.correo }}" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Fecha de Compra</label>
+          <input type="date" name="fecha_compra" value="{{ cuenta.fecha_compra }}" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Fecha de Expiración</label>
+          <input type="date" name="fecha_expiracion" value="{{ cuenta.fecha_expiracion }}" class="form-control" required>
+        </div>
+        <div class="d-flex justify-content-between">
+          <button class="btn btn-primary">Guardar Cambios</button>
+          <a href="{{ url_for('panel.cuentas_cliente', cliente_id=cuenta.cliente_id) }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

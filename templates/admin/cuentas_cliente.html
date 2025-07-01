@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Cuentas de {{ cliente.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <h1 class="mb-4 fw-bold">Cuentas de {{ cliente.nombre }}</h1>
+
+  <!-- Botón Volver -->
+  <a href="{{ url_for('panel.clientes') }}" class="btn btn-secondary mb-3">
+    ← Volver a Clientes
+  </a>
+
+  <a href="{{ url_for('panel.nueva_cuenta', cliente_id=cliente.id) }}" class="btn btn-success mb-3">
+    + Nueva Cuenta
+  </a>
+
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered align-middle shadow-sm">
+      <thead class="table-dark">
+        <tr class="text-center">
+          <th>ID</th>
+          <th>Correo</th>
+          <th>Fecha Compra</th>
+          <th>Fecha Expiración</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cuenta in cuentas %}
+        <tr class="text-center">
+          <td>{{ cuenta.id }}</td>
+          <td>{{ cuenta.correo }}</td>
+          <td>{{ cuenta.fecha_compra }}</td>
+          <td>{{ cuenta.fecha_expiracion }}</td>
+          <td>
+            <a href="{{ url_for('panel.editar_cuenta', cuenta_id=cuenta.id) }}" class="btn btn-warning btn-sm">Editar</a>
+            <a href="{{ url_for('panel.eliminar_cuenta', cuenta_id=cuenta.id) }}" class="btn btn-danger btn-sm">Eliminar</a>
+            <a href="{{ url_for('panel.renovar_cuenta', cuenta_id=cuenta.id) }}" class="btn btn-info btn-sm">Renovar +30d</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

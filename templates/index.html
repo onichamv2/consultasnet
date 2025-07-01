@@ -4,96 +4,116 @@
   <meta charset="UTF-8" />
   <title>Consulta tu Hogar Netflix</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Bootstrap -->
+
+  <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
   <style>
     body {
       background: #f9fafb;
-      font-family: 'Arial', sans-serif;
+      font-family: Arial, sans-serif;
       padding: 50px 20px;
+      text-align: center;
     }
     h1 {
       color: #e50914;
       font-weight: 800;
       margin-bottom: 30px;
     }
-    .container {
-      max-width: 720px;
-      margin: auto;
+    #buscar-form {
+      max-width: 700px;
+      margin: 0 auto;
     }
-    .btn-primary {
-      background: #e50914;
-      border: none;
+    #buscar-form .input-group {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 8px;
     }
-    .btn-primary:hover {
-      background: #b00610;
+    #buscar-form input {
+      flex: 1 1 auto;
+      min-width: 0;
     }
-    #resultado {
-      margin-top: 30px;
+    #loader {
+      display: none;
+    }
+    #result-wrapper {
+      max-width: 900px;
+      margin: 50px auto 0 auto;
       text-align: left;
-      overflow-x: auto;
     }
-    iframe {
-      width: 100%;
-      height: 80vh;
+    .icon-btn {
       border: none;
+      background: transparent;
+      color: #666;
+      font-size: 1.5rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.35rem;
+      transition: color 0.2s;
+    }
+    .icon-btn:hover {
+      color: #e50914;
+    }
+    @media(max-width: 768px) {
+      #buscar-form .input-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      #buscar-form input, #buscar-form button {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container text-center">
-    <h1>Consulta tu Hogar Netflix</h1>
-    <div class="input-group mb-4 shadow-sm">
-      <input type="email" id="correoInput" class="form-control" placeholder="ejemplo@fyreh.com" required />
-      <button id="buscarBtn" class="btn btn-primary" onclick="buscarCorreo()">Buscar</button>
+  <h1>Consulta tu Hogar Netflix</h1>
+
+  <form id="buscar-form">
+    <div class="input-group">
+      <input name="pin" id="pin" type="text" class="form-control" placeholder="PIN (opcional)" style="max-width: 150px;">
+      <input name="correo" id="correo" type="email" class="form-control" placeholder="ejemplo@fyreh.com" required>
+      <button type="submit" class="btn btn-danger" id="buscar-btn">Buscar</button>
+      <button type="button" class="icon-btn" id="clear-btn" title="Limpiar">
+        <i class="bi bi-trash3-fill"></i>
+      </button>
+      <span id="loader">⏳</span>
     </div>
-    <div id="resultado"></div>
-  </div>
+  </form>
 
+  <div id="result-wrapper"></div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script>
-    async function buscarCorreo() {
-      const correo = document.getElementById("correoInput").value.trim();
-      const btn = document.getElementById("buscarBtn");
+    $('#buscar-form').on('submit', function(e) {
+      e.preventDefault();
 
-      if (!correo) {
-        mostrar(`❌ Ingresa un correo válido.`);
-        return;
-      }
+      const pin = $('#pin').val();
+      const correo = $('#correo').val();
 
-      btn.disabled = true;
-      btn.innerHTML = `Buscando...`;
+      $('#buscar-btn').prop('disabled', true);
+      $('#loader').show();
+      $('#result-wrapper').html("");
 
-      try {
-        const res = await fetch("/buscar", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({ correo })
-        });
-        const data = await res.json();
+      $.post('/buscar', { correo: correo, pin: pin }, function(data) {
+        $('#result-wrapper').html(data);
+      }).fail(function() {
+        $('#result-wrapper').html('<div class="alert alert-danger">❌ Error en la consulta.</div>');
+      }).always(function() {
+        $('#buscar-btn').prop('disabled', false);
+        $('#loader').hide();
+      });
+    });
 
-        if (data.mensaje) {
-          mostrar(data.mensaje);
-        } else {
-          mostrar(`❌ ${data.error}`);
-        }
-
-        document.getElementById("correoInput").value = "";
-
-      } catch {
-        mostrar("❌ Error de conexión.");
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Buscar";
-      }
-    }
-
-    function mostrar(html) {
-      document.getElementById("resultado").innerHTML = `
-        <div class="card p-3 shadow-sm">
-          ${html}
-        </div>
-      `;
-    }
+    $('#clear-btn').on('click', function() {
+      $('#pin').val('');
+      $('#correo').val('');
+      $('#result-wrapper').html('');
+      $('#correo').focus();
+    });
   </script>
 </body>
 </html>

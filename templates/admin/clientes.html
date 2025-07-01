@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Clientes{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <h1 class="mb-4 fw-bold">Clientes</h1>
+
+  <a href="{{ url_for('panel.nuevo_cliente') }}" class="btn btn-primary mb-3">
+    + Nuevo Cliente
+  </a>
+
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered align-middle shadow-sm">
+      <thead class="table-dark">
+        <tr class="text-center">
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Teléfono</th>
+          <th>Cantidad</th>
+          <th>PIN</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cliente in clientes %}
+        <tr class="text-center">
+          <td>{{ cliente.id }}</td>
+          <td>{{ cliente.nombre }}</td>
+          <td>{{ cliente.telefono }}</td>
+          <td><span class="badge bg-secondary">{{ cliente.cuentas | length }}</span></td>
+          <td>
+            {% if cliente.pin_restablecer %}
+              <span class="badge bg-success">{{ cliente.pin_restablecer }}</span>
+            {% else %}
+              <span class="badge bg-danger">No generado</span>
+            {% endif %}
+            <a href="{{ url_for('panel.generar_pin', cliente_id=cliente.id) }}"
+               class="btn btn-outline-secondary btn-sm ms-2">
+              Generar PIN
+            </a>
+          </td>
+          <td>
+            <a href="{{ url_for('panel.filtros_cliente', cliente_id=cliente.id) }}"
+               class="btn btn-warning btn-sm">
+              Filtros
+            </a>
+            <a href="{{ url_for('panel.cuentas_cliente', cliente_id=cliente.id) }}"
+               class="btn btn-info btn-sm">
+              Ver Cuentas
+            </a>
+            <a href="{{ url_for('panel.reportar_cuentas_vencidas', cliente_id=cliente.id) }}"
+               class="btn btn-success btn-sm">
+              Reportar Vencidas
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

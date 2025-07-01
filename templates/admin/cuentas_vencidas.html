@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Cuentas Vencidas{% endblock %}
+
+{% block content %}
+<h1>Cuentas Vencidas</h1>
+
+{% for group in cuentas_por_cliente.values() %}
+  <h3>👤 {{ group.cliente.nombre }} — 📞 {{ group.cliente.telefono }}</h3>
+
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Correo</th>
+        <th>Fecha Expiración</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cuenta in group.cuentas %}
+      <tr>
+        <td>{{ cuenta.id }}</td>
+        <td>{{ cuenta.correo }}</td>
+        <td>{{ cuenta.fecha_expiracion }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <hr>
+{% else %}
+  <p>No hay cuentas vencidas.</p>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Editar Cliente{% endblock %}
+{% block content %}
+<h1>Editar Cliente</h1>
+<form method="POST">
+  <div class="mb-3">
+    <label>Nombre</label>
+    <input type="text" name="nombre" class="form-control" value="{{ cliente.nombre }}">
+  </div>
+  <div class="mb-3">
+    <label>Teléfono</label>
+    <input type="text" name="telefono" class="form-control" value="{{ cliente.telefono }}">
+  </div>
+  <button class="btn btn-primary">Guardar</button>
+</form>
+{% endblock %}

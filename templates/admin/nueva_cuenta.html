@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Nueva Cuenta{% endblock %}
+{% block content %}
+<h1>Nueva(s) Cuenta(s) para {{ cliente.nombre }}</h1>
+
+<form method="POST">
+  <!-- UNA CUENTA -->
+  <div class="mb-3">
+    <label>Correo único</label>
+    <input type="email" name="correo_uno" class="form-control">
+  </div>
+
+  <!-- VARIAS CUENTAS -->
+  <div class="mb-3">
+    <label>O varias cuentas (una por línea)</label>
+    <textarea name="correos_varios" class="form-control" rows="5"></textarea>
+  </div>
+
+  <button class="btn btn-primary">Guardar Cuenta(s)</button>
+</form>
+
+<p class="mt-3 text-muted">
+  🗓️ *La fecha de compra se guarda como **hoy** y expiración +30 días automáticamente.*
+</p>
+{% endblock %}
