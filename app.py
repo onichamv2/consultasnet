@@ -5,13 +5,11 @@ from dotenv import load_dotenv
 
 from flask import Flask, request, render_template
 from flask_login import LoginManager
-from models import Cliente, Cuenta, AdminUser
+from models import db, Cliente, Cuenta, AdminUser  # 👈 Usa db normal
 from panelAdmin import panel_bp
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-import asyncio
 
 # --------------------------
 # ✅ Cargar .env
@@ -21,7 +19,9 @@ load_dotenv()
 IMAP_USER = os.getenv("IMAP_USER")
 IMAP_PASS = os.getenv("IMAP_PASS")
 IMAP_SERVER = os.getenv("IMAP_SERVER")
-IMAP_PORT = int(os.getenv("IMAP_PORT", 993))
+IMAP_PORT_RAW = os.getenv("IMAP_PORT")
+IMAP_PORT = int(IMAP_PORT_RAW) if IMAP_PORT_RAW else None
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 SECRET_KEY = os.getenv("SECRET_KEY", "SUPER_SECRET")
 
@@ -35,15 +35,11 @@ app = Flask(__name__)
 app.secret_key = SECRET_KEY
 
 # --------------------------
-# ✅ Motor ASYNC y sesión
+# ✅ Motor SQLAlchemy normal
 # --------------------------
-engine = create_async_engine(DATABASE_URL, echo=True)
-
-AsyncSessionLocal = sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False
-)
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(app)
 
 # --------------------------
 # ✅ Configurar Login Manager
@@ -53,9 +49,8 @@ login_manager.init_app(app)
 login_manager.login_view = 'panel.login'
 
 @login_manager.user_loader
-async def load_user(user_id):
-    async with AsyncSessionLocal() as session:
-        return await session.get(AdminUser, int(user_id))
+def load_user(user_id):
+    return AdminUser.query.get(int(user_id))
 
 # --------------------------
 # ✅ Registrar Blueprints
@@ -70,24 +65,17 @@ def index():
     return render_template('index.html')
 
 # --------------------------
-# 🔍 Ruta de búsqueda ASYNC
+# 🔍 Ruta de búsqueda SIN async
 # --------------------------
 @app.route('/buscar', methods=['POST'])
-async def buscar():
+def buscar():
     correo_input = request.values.get('correo', '').strip()
 
     if not correo_input:
         return "❌ Debes enviar un correo válido."
 
-    async with AsyncSessionLocal() as session:
-        cliente = await session.scalar(
-            Cliente.query.filter(Cliente.cuentas.any(Cuenta.correo == correo_input)).limit(1)
-        )
-
-        cuentas = await session.execute(
-            Cuenta.query.filter_by(correo=correo_input)
-        )
-        cuentas = cuentas.scalars().all()
+    cliente = Cliente.query.filter(Cliente.cuentas.any(Cuenta.correo == correo_input)).first()
+    cuentas = Cuenta.query.filter_by(correo=correo_input).all()
 
     filtros = [
         "Importante: Cómo actualizar tu Hogar con Netflix",
@@ -154,10 +142,6 @@ async def buscar():
 # 🚀 Ejecutar localmente
 # --------------------------
 if __name__ == "__main__":
-    async def run():
-        async with engine.begin() as conn:
-            # Aquí deberías usar Alembic en producción
-            pass
-
-    asyncio.run(run())
+    with app.app_context():
+        db.create_all()
     app.run(host='0.0.0.0', port=5000)
