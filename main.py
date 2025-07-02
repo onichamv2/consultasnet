@@ -2,6 +2,7 @@ import os
 import imaplib
 import email
 from dotenv import load_dotenv
+from app import app
 
 from flask import Flask, request, render_template, Response
 from flask_login import LoginManager
@@ -135,7 +136,9 @@ def buscar():
 # --------------------------
 # 📌 Run
 # --------------------------
-if __name__ == '__main__':
+if __name__ == "__main__":
     with app.app_context():
+        from models import db  # Para asegurar que db esté en contexto
         db.create_all()
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
+
