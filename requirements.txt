@@ -3,4 +3,4 @@ Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
 python-dotenv==1.0.1
 gunicorn==21.2.0
-pg8000==1.29.4
+pg8000==1.30.5

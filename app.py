@@ -5,11 +5,8 @@ from dotenv import load_dotenv
 
 from flask import Flask, request, render_template
 from flask_login import LoginManager
-from models import db, Cliente, Cuenta, AdminUser  # 👈 Usa db normal
+from models import db, Cliente, Cuenta, AdminUser
 from panelAdmin import panel_bp
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 # --------------------------
 # ✅ Cargar .env
@@ -23,6 +20,13 @@ IMAP_PORT_RAW = os.getenv("IMAP_PORT")
 IMAP_PORT = int(IMAP_PORT_RAW) if IMAP_PORT_RAW else None
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+
+# ✅ Forzar pg8000 si no está
+if DATABASE_URL and DATABASE_URL.startswith("postgresql://") and "+pg8000" not in DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+pg8000://", 1)
+
+print("✅ DATABASE_URL final:", DATABASE_URL)
+
 SECRET_KEY = os.getenv("SECRET_KEY", "SUPER_SECRET")
 
 if not all([IMAP_USER, IMAP_PASS, IMAP_SERVER, IMAP_PORT, DATABASE_URL]):
@@ -35,14 +39,14 @@ app = Flask(__name__)
 app.secret_key = SECRET_KEY
 
 # --------------------------
-# ✅ Motor SQLAlchemy normal
+# ✅ Motor SQLAlchemy
 # --------------------------
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 # --------------------------
-# ✅ Configurar Login Manager
+# ✅ Login Manager
 # --------------------------
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -65,7 +69,7 @@ def index():
     return render_template('index.html')
 
 # --------------------------
-# 🔍 Ruta de búsqueda SIN async
+# 🔍 Búsqueda
 # --------------------------
 @app.route('/buscar', methods=['POST'])
 def buscar():
@@ -139,7 +143,7 @@ def buscar():
         return f"❌ Error IMAP: {str(e)}"
 
 # --------------------------
-# 🚀 Ejecutar localmente
+# 🚀 Local
 # --------------------------
 if __name__ == "__main__":
     with app.app_context():
