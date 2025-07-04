@@ -29,7 +29,7 @@ app.secret_key = 'TU_SECRET_KEY_PRO'
 # 📌 DB config
 # --------------------------
 DATABASE_URL = os.getenv("DATABASE_URL")
-
+print("DATABASE_URL:", DATABASE_URL)
 if DATABASE_URL:
     app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 else:
