@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+
+{% block title %}Clientes Finales{% endblock %}
+
+{% block content %}
+<h1 class="mb-4 fw-bold">Clientes Finales</h1>
+
+<!-- ✅ BOTÓN para abrir modal NUEVO -->
+<button class="btn btn-success mb-3" id="openNuevoFinalModal">
+  + Nuevo Cliente Final
+</button>
+
+<table class="table table-striped table-bordered align-middle shadow-sm">
+  <thead class="table-dark text-center">
+    <tr>
+      <th>ID</th>
+      <th>Teléfono</th>
+      <th>Correo</th>
+      <th>PIN Final</th>
+      <th>Fecha Compra</th>
+      <th>Fecha Expiración</th>
+      <th>Filtros Activos</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody class="text-center">
+    {% set hoy = today %}
+    {% for cuenta in cuentas %}
+    <tr class="{% if cuenta.fecha_expiracion and cuenta.fecha_expiracion < hoy %}table-danger blink{% endif %}">
+      <td>{{ cuenta.id }}</td>
+      <td>{{ cuenta.cliente_final.telefono if cuenta.cliente_final else '----' }}</td>
+      <td class="correo-td">
+        <div class="correo-wrap">{{ cuenta.correo }}</div>
+      </td>
+
+      <!-- ✅ PIN Final con botón Generar dentro del mismo <td> -->
+      <td>
+        <span class="badge bg-success">{{ cuenta.pin_final or '----' }}</span>
+        <form action="{{ url_for('panel.generar_pin_final', cuenta_id=cuenta.id) }}"
+              method="POST" style="display:inline;">
+          <button type="submit" class="btn btn-light btn-sm ms-2">
+            Generar PIN
+          </button>
+        </form>
+      </td>
+
+      <td>{{ cuenta.fecha_compra }}</td>
+      <td>{{ cuenta.fecha_expiracion }}</td>
+      <td>
+        {% if cuenta.filtro_netflix and cuenta.filtro_dispositivo and cuenta.filtro_actualizar_hogar and cuenta.filtro_codigo_temporal %}
+          ✅ Sí
+        {% else %}
+          ❌ No
+        {% endif %}
+      </td>
+      <td>
+        <!-- ✅ Botón EDITAR TELÉFONO -->
+        <button type="button"
+          class="btn btn-warning btn-sm open-edit-modal-final"
+          data-id="{{ cuenta.id }}">
+          Editar
+        </button>
+
+        <form action="{{ url_for('panel.renovar_cuenta_final', cuenta_id=cuenta.id) }}"
+              method="POST" style="display:inline;">
+          <button type="submit" class="btn btn-info btn-sm">Renovar</button>
+        </form>
+
+        <form action="{{ url_for('panel.eliminar_cliente_final', cliente_id=cuenta.cliente_final.id) }}"
+              method="POST" style="display:inline;">
+          <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- ✅ MODAL: Editar Teléfono -->
+<div class="modal fade" id="editModalFinal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="editFormFinal">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Teléfono</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="cuentaIdFinal">
+          <div class="mb-3">
+            <label>Teléfono</label>
+            <input type="text" id="telefonoFinal" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Correo</label>
+            <input type="email" id="correoFinal" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ MODAL: Nuevo Cliente Final -->
+<div class="modal fade" id="nuevoFinalModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="nuevoFinalForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Nuevo Cliente Final</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label>Nombre</label>
+            <input type="text" id="nuevoNombre" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Teléfono</label>
+            <input type="text" id="nuevoTelefono" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Correo</label>
+            <input type="email" id="nuevoCorreo" class="form-control" required>
+          </div>
+          <label>Filtros:</label>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="filtroNetflix" checked>
+            <label class="form-check-label">Filtro Netflix</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="filtroDispositivo" checked>
+            <label class="form-check-label">Filtro Dispositivo</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="filtroHogar" checked>
+            <label class="form-check-label">Filtro Actualizar Hogar</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="filtroCodigo" checked>
+            <label class="form-check-label">Filtro Código Temporal</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  .blink {
+    animation: blink 1s linear infinite;
+  }
+  @keyframes blink {
+    50% { opacity: 0.3; }
+  }
+  .correo-td {
+    max-width: 240px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  .correo-td .correo-wrap {
+    display: block;
+    white-space: normal;
+  }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const editModalFinal = new bootstrap.Modal(document.getElementById('editModalFinal'));
+    const editFormFinal = document.getElementById('editFormFinal');
+
+    document.querySelectorAll('.open-edit-modal-final').forEach(button => {
+      button.addEventListener('click', () => {
+        const cuentaId = button.dataset.id;
+        fetch(`/panel/api/cuenta_final/${cuentaId}`)
+          .then(res => res.json())
+          .then(data => {
+            document.getElementById('cuentaIdFinal').value = data.id;
+            document.getElementById('telefonoFinal').value = data.telefono;
+            document.getElementById('correoFinal').value = data.correo;
+            editModalFinal.show();
+          });
+      });
+    });
+
+    editFormFinal.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const cuentaId = document.getElementById('cuentaIdFinal').value;
+      fetch(`/panel/api/cuenta_final/${cuentaId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          telefono: document.getElementById('telefonoFinal').value,
+          correo: document.getElementById('correoFinal').value
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          location.reload();
+        } else {
+          alert('❌ Error al guardar teléfono');
+        }
+      });
+    });
+
+    const nuevoModal = new bootstrap.Modal(document.getElementById('nuevoFinalModal'));
+    const openBtn = document.getElementById('openNuevoFinalModal');
+
+    if (openBtn) {
+      openBtn.addEventListener('click', () => {
+        nuevoModal.show();
+      });
+    }
+
+    document.getElementById('nuevoFinalForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      fetch('/panel/api/nuevo_cliente_final', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: document.getElementById('nuevoNombre').value,
+          telefono: document.getElementById('nuevoTelefono').value,
+          correo: document.getElementById('nuevoCorreo').value,
+          filtro_netflix: document.getElementById('filtroNetflix').checked,
+          filtro_dispositivo: document.getElementById('filtroDispositivo').checked,
+          filtro_actualizar_hogar: document.getElementById('filtroHogar').checked,
+          filtro_codigo_temporal: document.getElementById('filtroCodigo').checked
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          location.reload();
+        } else {
+          alert('❌ Error al guardar nuevo cliente final');
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

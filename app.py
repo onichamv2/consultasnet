@@ -5,8 +5,10 @@ from dotenv import load_dotenv
 
 from flask import Flask, request, render_template
 from flask_login import LoginManager
-from models import db, Cliente, Cuenta, AdminUser
+from flask_migrate import Migrate
+from models import db, Cliente, ClienteFinal, Cuenta, AdminUser
 from panelAdmin import panel_bp
+from extensions import db
 
 # --------------------------
 # ✅ Cargar .env
@@ -21,7 +23,6 @@ IMAP_PORT = int(IMAP_PORT_RAW) if IMAP_PORT_RAW else None
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# ✅ Forzar pg8000 si no está
 if DATABASE_URL and DATABASE_URL.startswith("postgresql://") and "+pg8000" not in DATABASE_URL:
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+pg8000://", 1)
 
@@ -46,6 +47,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 # --------------------------
+# ✅ Migraciones: Flask-Migrate
+# --------------------------
+migrate = Migrate(app, db)
+
+# --------------------------
 # ✅ Login Manager
 # --------------------------
 login_manager = LoginManager()
@@ -57,7 +63,7 @@ def load_user(user_id):
     return AdminUser.query.get(int(user_id))
 
 # --------------------------
-# ✅ Registrar Blueprints
+# ✅ Registrar Blueprint
 # --------------------------
 app.register_blueprint(panel_bp)
 
@@ -69,25 +75,49 @@ def index():
     return render_template('index.html')
 
 # --------------------------
-# 🔍 Búsqueda
+# 🔍 Búsqueda IMAP + FILTROS
 # --------------------------
 @app.route('/buscar', methods=['POST'])
 def buscar():
-    correo_input = request.values.get('correo', '').strip()
+    correo_input = request.values.get('correo', '').strip().lower()
 
-    if not correo_input:
-        return "❌ Debes enviar un correo válido."
+    # Usa ILIKE en SQLAlchemy: lower(column) == lower(valor)
+    cuenta = Cuenta.query.filter(
+        db.func.lower(Cuenta.correo) == correo_input
+    ).first()
 
-    cliente = Cliente.query.filter(Cliente.cuentas.any(Cuenta.correo == correo_input)).first()
-    cuentas = Cuenta.query.filter_by(correo=correo_input).all()
+    filtros = []
 
-    filtros = [
-        "Importante: Cómo actualizar tu Hogar con Netflix",
-        "Tu código de acceso temporal de Netflix"
-    ]
+    if cuenta:
+        cliente = cuenta.cliente
 
-    if cliente and cliente.filtro_netflix:
-        filtros.append("Netflix: Tu código de inicio de sesión")
+        if not cliente:
+            return "❌ Esta cuenta NO pertenece a un Cliente Premium registrado."
+
+        if cuenta.filtro_netflix:
+            filtros.append("Netflix: Tu código de inicio de sesión")
+        if cuenta.filtro_dispositivo:
+            filtros.append("Un nuevo dispositivo está usando tu cuenta")
+        if cuenta.filtro_actualizar_hogar:
+            filtros.append("Confirmación: Se ha confirmado tu Hogar con Netflix")
+        if cuenta.filtro_codigo_temporal:
+            filtros.append("Tu código de acceso temporal de Netflix")
+
+    else:
+        filtros = [
+            "Netflix: Tu código de inicio de sesión",
+            "Un nuevo dispositivo está usando tu cuenta",
+            "Confirmación: Se ha confirmado tu Hogar con Netflix",
+            "Tu código de acceso temporal de Netflix"
+        ]
+
+    if not filtros:
+        return "❌ No hay filtros activos para esta cuenta."
+
+    print("========== DEBUG ==========")
+    print(f"Correo buscado: {correo_input}")
+    print(f"Filtros activos: {filtros}")
+    print("===========================")
 
     try:
         mail = imaplib.IMAP4_SSL(IMAP_SERVER, IMAP_PORT)
@@ -107,13 +137,13 @@ def buscar():
             asunto = email.header.decode_header(msg["Subject"])[0][0]
             if isinstance(asunto, bytes):
                 asunto = asunto.decode(errors="replace")
+            asunto = asunto.lower().strip()
 
-            if any(f in asunto for f in filtros):
+            if any(f.lower() in asunto for f in filtros):
                 if msg.is_multipart():
                     for part in msg.walk():
                         ctype = part.get_content_type()
                         charset = part.get_content_charset() or "utf-8"
-
                         if ctype == "text/html":
                             html_body = part.get_payload(decode=True).decode(charset, errors="replace")
                             break
@@ -134,9 +164,9 @@ def buscar():
 
         return render_template(
             'busqueda_resultado.html',
-            cliente=cliente,
-            cuentas=cuentas,
-            mensaje=html_body
+            cliente=cuenta.cliente if cuenta else None,
+            cuentas=[cuenta] if cuenta else [],
+            mensaje=html_body or "✅ No se encontró coincidencia, pero la conexión IMAP funcionó."
         )
 
     except Exception as e:
@@ -149,3 +179,4 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
     app.run(host='0.0.0.0', port=5000)
+

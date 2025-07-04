@@ -1,25 +1,110 @@
 {% extends 'base.html' %}
 {% block title %}Nueva Cuenta{% endblock %}
+
 {% block content %}
-<h1>Nueva(s) Cuenta(s) para {{ cliente.nombre }}</h1>
+<div class="container py-4">
+  <h1 class="mb-4 fw-bold">Nueva(s) Cuenta(s) para {{ cliente.nombre }}</h1>
 
-<form method="POST">
-  <!-- UNA CUENTA -->
-  <div class="mb-3">
-    <label>Correo único</label>
-    <input type="email" name="correo_uno" class="form-control">
+  <a href="{{ url_for('panel.cuentas_cliente', cliente_id=cliente.id) }}" class="btn btn-secondary mb-3">
+    ← Volver a Cuentas
+  </a>
+
+  <!-- BOTÓN para abrir MODAL -->
+  <button class="btn btn-success mb-3" id="openNuevaCuentaModal">
+    + Nueva Cuenta Premium
+  </button>
+
+  <p class="text-muted">
+    🗓️ *La fecha de compra se guarda como **hoy** y la expiración suma +30 días automáticamente.*
+  </p>
+</div>
+
+<!-- ✅ MODAL NUEVA CUENTA PREMIUM -->
+<div class="modal fade" id="nuevaCuentaModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="nuevaCuentaForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Agregar Nueva(s) Cuenta(s)</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- UNA CUENTA -->
+          <div class="mb-3">
+            <label>Correo único</label>
+            <input type="email" id="correoUno" class="form-control">
+          </div>
+
+          <!-- VARIAS CUENTAS -->
+          <div class="mb-3">
+            <label>O varias cuentas (una por línea)</label>
+            <textarea id="correosVarios" class="form-control" rows="5"></textarea>
+          </div>
+
+          <!-- ✅ Filtros -->
+          <div class="mb-3">
+            <label class="fw-bold">Filtros para esta(s) cuenta(s):</label><br>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" checked disabled>
+              <label class="form-check-label">Filtro Netflix</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" checked disabled>
+              <label class="form-check-label">Filtro Dispositivo</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" checked disabled>
+              <label class="form-check-label">Filtro Actualizar Hogar</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" checked disabled>
+              <label class="form-check-label">Filtro Código Temporal</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar Cuenta(s)</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
   </div>
+</div>
+{% endblock %}
 
-  <!-- VARIAS CUENTAS -->
-  <div class="mb-3">
-    <label>O varias cuentas (una por línea)</label>
-    <textarea name="correos_varios" class="form-control" rows="5"></textarea>
-  </div>
+{% block extra_scripts %}
+<script>
+  const nuevaModal = new bootstrap.Modal(document.getElementById('nuevaCuentaModal'));
+  const openBtn = document.getElementById('openNuevaCuentaModal');
+  const nuevaForm = document.getElementById('nuevaCuentaForm');
 
-  <button class="btn btn-primary">Guardar Cuenta(s)</button>
-</form>
+  if (openBtn) {
+    openBtn.addEventListener('click', () => {
+      nuevaModal.show();
+    });
+  }
 
-<p class="mt-3 text-muted">
-  🗓️ *La fecha de compra se guarda como **hoy** y expiración +30 días automáticamente.*
-</p>
+  nuevaForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    fetch("/panel/api/nueva_cuenta_premium", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        cliente_id: {{ cliente.id }},
+        correo_uno: document.getElementById('correoUno').value,
+        correos_varios: document.getElementById('correosVarios').value
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      } else {
+        alert("❌ Error al guardar");
+      }
+    });
+  });
+</script>
 {% endblock %}

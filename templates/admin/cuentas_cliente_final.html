@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}Cuentas Finales de {{ cliente.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="mb-4 fw-bold">Cuentas Finales de {{ cliente.nombre }}</h1>
+
+  <a href="{{ url_for('panel.clientes_finales') }}" class="btn btn-secondary mb-3">
+    ⬅️ Volver a Clientes Finales
+  </a>
+
+  <a href="{{ url_for('panel.nueva_cuenta_final', cliente_final_id=cliente.id) }}" class="btn btn-success mb-3">
+    + Nueva Cuenta Final
+  </a>
+
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered align-middle shadow-sm">
+      <thead class="table-dark">
+        <tr class="text-center">
+          <th>ID</th>
+          <th>Correo</th>
+          <th>PIN</th>
+          <th>Fecha Compra</th>
+          <th>Fecha Expiración</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cuenta in cuentas %}
+          <tr class="text-center {% if cuenta.fecha_expiracion < today %}table-danger{% endif %}">
+            <td>{{ cuenta.id }}</td>
+            <td>{{ cuenta.correo }}</td>
+            <td>{{ cuenta.pin_final }}</td>
+            <td>{{ cuenta.fecha_compra }}</td>
+            <td>{{ cuenta.fecha_expiracion }}</td>
+            <td>
+              <!-- Botón que abre modal flotante -->
+              <button type="button"
+                      class="btn btn-primary btn-sm open-edit-modal-final"
+                      data-id="{{ cuenta.id }}">
+                Editar
+              </button>
+
+              <form method="POST" action="{{ url_for('panel.renovar_cuenta_final', cuenta_id=cuenta.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-success btn-sm">Renovar</button>
+              </form>
+
+              <form method="POST" action="{{ url_for('panel.eliminar_cuenta_final', cuenta_id=cuenta.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ✅ MODAL flotante para Editar Correo y Teléfono -->
+<div class="modal fade" id="editModalFinal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="editFormFinal">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Correo y Teléfono</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="cuentaIdFinal">
+          <div class="mb-3">
+            <label>Correo</label>
+            <input type="email" id="correoFinal" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Teléfono</label>
+            <input type="text" id="telefonoFinal" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+  const editModalFinal = new bootstrap.Modal(document.getElementById('editModalFinal'));
+  const editFormFinal = document.getElementById('editFormFinal');
+
+  document.querySelectorAll('.open-edit-modal-final').forEach(button => {
+    button.addEventListener('click', () => {
+      const cuentaId = button.dataset.id;
+      fetch(`/panel/api/cuenta_final/${cuentaId}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('cuentaIdFinal').value = data.id;
+          document.getElementById('correoFinal').value = data.correo;
+          document.getElementById('telefonoFinal').value = data.telefono;
+          editModalFinal.show();
+        });
+    });
+  });
+
+  editFormFinal.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const cuentaId = document.getElementById('cuentaIdFinal').value;
+    fetch(`/panel/api/cuenta_final/${cuentaId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        correo: document.getElementById('correoFinal').value,
+        telefono: document.getElementById('telefonoFinal').value
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      } else {
+        alert('❌ Error al guardar');
+      }
+    });
+  });
+</script>
+{% endblock %}
+{% endblock %}

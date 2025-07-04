@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
+
 {% block title %}Nuevo Cliente{% endblock %}
+
 {% block content %}
 <h1>Nuevo Cliente</h1>
 <form method="POST">
@@ -7,10 +9,26 @@
     <label>Nombre</label>
     <input type="text" name="nombre" class="form-control" required>
   </div>
+
   <div class="mb-3">
     <label>Teléfono</label>
     <input type="text" name="telefono" class="form-control" required>
   </div>
-  <button class="btn btn-primary">Guardar Cliente</button>
+
+  <div class="mb-3">
+    <label>Correo de la Cuenta</label>
+    <input type="email" name="correo" class="form-control" required>
+  </div>
+
+  <button class="btn btn-primary">Guardar Cliente + Cuenta</button>
 </form>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    console.log("🟢 Script funcionando en NUEVO CLIENTE");
+  });
+</script>
 {% endblock %}

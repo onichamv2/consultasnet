@@ -1,64 +1,142 @@
 {% extends 'base.html' %}
+
 {% block title %}Clientes{% endblock %}
 
 {% block content %}
-<div class="container py-4">
+<h1 class="mb-4 fw-bold">Clientes</h1>
 
-  <h1 class="mb-4 fw-bold">Clientes</h1>
+<a href="{{ url_for('panel.nuevo_cliente') }}" class="btn btn-primary mb-3">
+  + Nuevo Cliente
+</a>
 
-  <a href="{{ url_for('panel.nuevo_cliente') }}" class="btn btn-primary mb-3">
-    + Nuevo Cliente
-  </a>
+<table class="table table-bordered">
+  <thead class="table-dark text-center">
+    <tr>
+      <th>ID</th>
+      <th>Nombre</th>
+      <th>Teléfono</th>
+      <th>Cantidad</th>
+      <th>PIN</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody class="text-center">
+    {% for cliente in clientes %}
+    <tr>
+      <td>{{ cliente.id }}</td>
+      <td>{{ cliente.nombre }}</td>
+      <td>{{ cliente.telefono }}</td>
+      <td>
+        <span class="badge bg-secondary">{{ cliente.cuentas|length }}</span>
+      </td>
+      <td>
+        {% if cliente.pin_restablecer %}
+          <span class="badge bg-success">{{ cliente.pin_restablecer }}</span>
+        {% else %}
+          <span class="badge bg-danger">No generado</span>
+        {% endif %}
+        <a href="{{ url_for('panel.generar_pin', cliente_id=cliente.id) }}" class="btn btn-sm btn-light">
+          Generar PIN
+        </a>
+      </td>
+      <td>
+        <!-- Botón Editar -->
+        <button 
+          class="btn btn-warning btn-sm open-edit-cliente"
+          data-id="{{ cliente.id }}">
+          Editar
+        </button>
 
-  <div class="table-responsive">
-    <table class="table table-striped table-bordered align-middle shadow-sm">
-      <thead class="table-dark">
-        <tr class="text-center">
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Teléfono</th>
-          <th>Cantidad</th>
-          <th>PIN</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for cliente in clientes %}
-        <tr class="text-center">
-          <td>{{ cliente.id }}</td>
-          <td>{{ cliente.nombre }}</td>
-          <td>{{ cliente.telefono }}</td>
-          <td><span class="badge bg-secondary">{{ cliente.cuentas | length }}</span></td>
-          <td>
-            {% if cliente.pin_restablecer %}
-              <span class="badge bg-success">{{ cliente.pin_restablecer }}</span>
-            {% else %}
-              <span class="badge bg-danger">No generado</span>
-            {% endif %}
-            <a href="{{ url_for('panel.generar_pin', cliente_id=cliente.id) }}"
-               class="btn btn-outline-secondary btn-sm ms-2">
-              Generar PIN
-            </a>
-          </td>
-          <td>
-            <a href="{{ url_for('panel.filtros_cliente', cliente_id=cliente.id) }}"
-               class="btn btn-warning btn-sm">
-              Filtros
-            </a>
-            <a href="{{ url_for('panel.cuentas_cliente', cliente_id=cliente.id) }}"
-               class="btn btn-info btn-sm">
-              Ver Cuentas
-            </a>
-            <a href="{{ url_for('panel.reportar_cuentas_vencidas', cliente_id=cliente.id) }}"
-               class="btn btn-success btn-sm">
-              Reportar Vencidas
-            </a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        <!-- Botón Ver Cuentas -->
+        <a href="{{ url_for('panel.cuentas_cliente', cliente_id=cliente.id) }}" class="btn btn-primary btn-sm">
+          Ver Cuentas
+        </a>
+
+        <!-- ✅ Botón Reportar por WhatsApp -->
+        <a href="{{ url_for('panel.reportar_cuentas', cliente_id=cliente.id) }}" 
+        class="btn btn-success btn-sm"
+        target="_blank"
+        rel="noopener noreferrer">
+        📤 Reportar
+      </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- ✅ Modal Editar Cliente -->
+<div class="modal fade" id="editClienteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="editClienteForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Cliente</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="clienteId">
+          <div class="mb-3">
+            <label>Nombre</label>
+            <input type="text" id="clienteNombre" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Teléfono</label>
+            <input type="text" id="clienteTelefono" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
   </div>
-
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const editClienteModal = new bootstrap.Modal(document.getElementById('editClienteModal'));
+  const editClienteForm = document.getElementById('editClienteForm');
+
+  // Abrir modal con datos del cliente
+  document.querySelectorAll('.open-edit-cliente').forEach(button => {
+    button.addEventListener('click', () => {
+      const clienteId = button.dataset.id;
+
+      fetch(`/panel/api/cliente/${clienteId}`)
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('clienteId').value = data.id;
+          document.getElementById('clienteNombre').value = data.nombre;
+          document.getElementById('clienteTelefono').value = data.telefono;
+          editClienteModal.show();
+        });
+    });
+  });
+
+  // Guardar cambios por AJAX
+  editClienteForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const clienteId = document.getElementById('clienteId').value;
+
+    fetch(`/panel/api/cliente/${clienteId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: document.getElementById('clienteNombre').value,
+        telefono: document.getElementById('clienteTelefono').value
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      } else {
+        alert('Error al guardar');
+      }
+    });
+  });
+</script>
 {% endblock %}

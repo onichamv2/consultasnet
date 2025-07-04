@@ -1,14 +1,15 @@
+# crearAdmin.py
+from app import app
 from models import db, AdminUser
-from admin import app
+
+# ✅ Pide datos por teclado
+username = input("👤 Usuario: ")
+email = input("📧 Correo: ")
+password = input("🔑 Clave: ")
 
 with app.app_context():
-    username = input("Usuario: ")
-    email = input("Email: ")
-    password = input("Clave: ")
-
     admin = AdminUser(username=username, email=email)
     admin.set_password(password)
     db.session.add(admin)
     db.session.commit()
-
-    print("✅ Admin creado con éxito")
+    print(f"✅ Usuario admin '{username}' creado correctamente.")
