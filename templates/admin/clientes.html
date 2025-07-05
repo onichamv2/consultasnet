@@ -30,14 +30,10 @@
         <span class="badge bg-secondary">{{ cliente.cuentas|length }}</span>
       </td>
       <td>
-        {% if cliente.pin_restablecer %}
-          <span class="badge bg-success">{{ cliente.pin_restablecer }}</span>
-        {% else %}
-          <span class="badge bg-danger">No generado</span>
-        {% endif %}
-        <a href="{{ url_for('panel.generar_pin', cliente_id=cliente.id) }}" class="btn btn-sm btn-light">
+        <span id="pin-{{ cliente.id }}">{{ cliente.pin_restablecer or '----' }}</span>
+        <button onclick="generarPin({{ cliente.id }})" class="btn btn-sm btn-light">
           Generar PIN
-        </a>
+        </button>
       </td>
       <td>
         <!-- Botón Editar -->
@@ -53,12 +49,12 @@
         </a>
 
         <!-- ✅ Botón Reportar por WhatsApp -->
-        <a href="{{ url_for('panel.reportar_cuentas', cliente_id=cliente.id) }}" 
-        class="btn btn-success btn-sm"
-        target="_blank"
-        rel="noopener noreferrer">
-        📤 Reportar
-      </a>
+        <a href="{{ url_for('panel.reportar_cuentas', cliente_id=cliente.id) }},"
+          class="btn btn-success btn-sm"
+          target="_blank"
+          rel="noopener noreferrer">
+          📤 Reportar
+        </a>
       </td>
     </tr>
     {% endfor %}
@@ -138,5 +134,18 @@
       }
     });
   });
+
+  // ✅ Nuevo: Generar PIN sin recargar
+  function generarPin(clienteId) {
+    fetch(`/panel/api/cliente/${clienteId}/generar_pin`, { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          document.getElementById(`pin-${clienteId}`).innerText = data.nuevo_pin;
+        } else {
+          alert("❌ Error generando PIN");
+        }
+      });
+  }
 </script>
 {% endblock %}
