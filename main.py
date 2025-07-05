@@ -254,7 +254,7 @@ def consulta_hogar():
             if opcion == "netflix" and cuenta.filtro_netflix:
                 filtros.append("inicio de sesión")
             elif opcion == "actualizar_hogar" and cuenta.filtro_actualizar_hogar:
-                filtros.append("actualizar tu Hogar")
+                filtros.append("Importante: Cómo actualizar tu Hogar con Netflix")
             elif opcion == "codigo_temporal" and cuenta.filtro_codigo_temporal:
                 filtros.append("código de acceso temporal")
             elif opcion == "dispositivo" and cuenta.filtro_dispositivo:
@@ -265,7 +265,7 @@ def consulta_hogar():
             if opcion == "netflix" and cuenta.filtro_netflix:
                 filtros.append("inicio de sesión")
             elif opcion == "actualizar_hogar" and cuenta.filtro_actualizar_hogar:
-                filtros.append("actualizar tu Hogar")
+                filtros.append("Importante: Cómo actualizar tu Hogar con Netflix")
             elif opcion == "codigo_temporal" and cuenta.filtro_codigo_temporal:
                 filtros.append("código de acceso temporal")
             elif opcion == "dispositivo" and cuenta.filtro_dispositivo:
