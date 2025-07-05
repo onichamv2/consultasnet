@@ -105,8 +105,11 @@ def dashboard():
 @panel_bp.route('/clientes')
 @login_required
 def clientes():
+    page = request.args.get('page', 1, type=int)
+    pagination = Cliente.query.paginate(page=page, per_page=20)
     return render_template('admin/clientes.html',
-        clientes=Cliente.query.all(),
+        clientes=pagination.items,
+        pagination=pagination,
         today=date.today()
     )
 
@@ -201,6 +204,16 @@ def api_get_cuenta_final(cuenta_id):
         "fecha_expiracion": cuenta.fecha_expiracion.isoformat(),
         "telefono": cuenta.cliente_final.telefono  # ✅ AQUI!
     }
+
+# ✅ NUEVO: Generar PIN Final por fetch()
+@panel_bp.route('/api/cuenta_final/<int:cuenta_id>/generar_pin_final', methods=['POST'])
+@login_required
+def api_generar_pin_final(cuenta_id):
+    cuenta = Cuenta.query.get_or_404(cuenta_id)
+    nuevo_pin = str(random.randint(1000, 9999))
+    cuenta.pin_final = nuevo_pin
+    db.session.commit()
+    return {"success": True, "nuevo_pin": nuevo_pin}
 
 @panel_bp.route('/api/cuenta_final/<int:cuenta_id>', methods=['POST'])
 @login_required
@@ -387,23 +400,23 @@ def buscar_correo():
     flash("❌ No se encontró ninguna cuenta con ese correo.")
     return redirect(url_for('panel.dashboard'))
 
-@panel_bp.route('/clientes/<int:cliente_id>/generar_pin')
+@panel_bp.route('/api/cliente/<int:cliente_id>/generar_pin', methods=['POST'])
 @login_required
-def generar_pin(cliente_id):
+def api_generar_pin(cliente_id):
     cliente = Cliente.query.get_or_404(cliente_id)
-    cliente.pin_restablecer = str(random.randint(1000, 9999))
+    nuevo_pin = str(random.randint(1000, 9999))
+    cliente.pin_restablecer = nuevo_pin
     db.session.commit()
-    flash(f"Nuevo PIN generado: {cliente.pin_restablecer}")
-    return redirect(url_for('panel.clientes'))
+    return {"success": True, "nuevo_pin": nuevo_pin}
 
-@panel_bp.route('/cuentas/<int:cuenta_id>/generar_pin_final', methods=['POST'])
+@panel_bp.route('/api/cuenta/<int:cuenta_id>/generar_pin_final', methods=['POST'])
 @login_required
-def generar_pin_final(cuenta_id):
+def api_generar_pin_final(cuenta_id):
     cuenta = Cuenta.query.get_or_404(cuenta_id)
-    cuenta.pin_final = str(random.randint(1000, 9999))
+    nuevo_pin = str(random.randint(1000, 9999))
+    cuenta.pin_final = nuevo_pin
     db.session.commit()
-    flash(f"Nuevo PIN Final generado: {cuenta.pin_final}")
-    return redirect(url_for('panel.clientes_finales'))
+    return {"success": True, "nuevo_pin": nuevo_pin}
 
 # ✅ API para crear nuevo Cliente Final + su cuenta SIEMPRE con filtros activos
 @panel_bp.route('/api/nuevo_cliente_final', methods=['POST'])

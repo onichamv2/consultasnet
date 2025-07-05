@@ -33,15 +33,10 @@
         <div class="correo-wrap">{{ cuenta.correo }}</div>
       </td>
 
-      <!-- ✅ PIN Final con botón Generar dentro del mismo <td> -->
+      <!-- ✅ PIN Final con botón AJAX -->
       <td>
-        <span class="badge bg-success">{{ cuenta.pin_final or '----' }}</span>
-        <form action="{{ url_for('panel.generar_pin_final', cuenta_id=cuenta.id) }}"
-              method="POST" style="display:inline;">
-          <button type="submit" class="btn btn-light btn-sm ms-2">
-            Generar PIN
-          </button>
-        </form>
+        <span id="pin-{{ cuenta.id }}" class="badge bg-success">{{ cuenta.pin_final or '----' }}</span>
+        <button onclick="generarPinFinal({{ cuenta.id }})" class="btn btn-light btn-sm ms-2">Generar PIN</button>
       </td>
 
       <td>{{ cuenta.fecha_compra }}</td>
@@ -248,5 +243,17 @@
       });
     });
   });
+
+  function generarPinFinal(cuentaId) {
+  fetch(`/panel/api/cuenta_final/${cuentaId}/generar_pin_final`, { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById(`pin-${cuentaId}`).innerText = data.nuevo_pin;
+      } else {
+        alert('❌ Error al generar PIN');
+      }
+    });
+  }
 </script>
 {% endblock %}
