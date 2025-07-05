@@ -4,6 +4,7 @@ import email
 from dotenv import load_dotenv
 from app import app
 import re
+from bs4 import BeautifulSoup
 
 from flask import Flask, request, render_template, Response
 from flask_login import LoginManager
@@ -163,6 +164,9 @@ def buscar():
 #SI FALLA ESTO SE AÑADIO ULTIMO
 @app.route('/api/consulta_hogar', methods=['POST'])
 def consulta_hogar():
+    import re
+    from bs4 import BeautifulSoup
+
     data = request.json
     correo_input = data.get('correo', '').strip().lower()
     pin_input = data.get('pin', '').strip()
@@ -172,35 +176,38 @@ def consulta_hogar():
         return jsonify({"resultado": "❌ Debes enviar un correo válido."})
 
     cuenta = Cuenta.query.filter(db.func.lower(Cuenta.correo) == correo_input).first()
-
     filtros = []
 
     if cuenta:
         if cuenta.cliente:
-            if cuenta.filtro_netflix:
-                filtros.append("Netflix: Tu código de inicio de sesión")
-            if cuenta.filtro_actualizar_hogar:
-                filtros.append("Confirmación: Se ha confirmado tu Hogar con Netflix")
-            if cuenta.filtro_codigo_temporal:
-                filtros.append("Tu código de acceso temporal de Netflix")
-            if pin_input and cuenta.filtro_dispositivo:
-                filtros.append("Un nuevo dispositivo está usando tu cuenta")
+            if opcion == "netflix" and cuenta.filtro_netflix:
+                filtros.append("inicio de sesión")
+            elif opcion == "actualizar_hogar" and cuenta.filtro_actualizar_hogar:
+                filtros.append("actualizar tu Hogar")
+            elif opcion == "codigo_temporal" and cuenta.filtro_codigo_temporal:
+                filtros.append("código de acceso temporal")
+            elif opcion == "dispositivo" and cuenta.filtro_dispositivo:
+                if not pin_input or cuenta.pin_final != pin_input:
+                    return jsonify({"resultado": "❌ PIN inválido o sin permiso."})
+                filtros.append("nuevo dispositivo está usando tu cuenta")
         elif cuenta.cliente_final:
-            if cuenta.filtro_netflix:
-                filtros.append("Netflix: Tu código de inicio de sesión")
-            if cuenta.filtro_actualizar_hogar:
-                filtros.append("Confirmación: Se ha confirmado tu Hogar con Netflix")
-            if cuenta.filtro_codigo_temporal:
-                filtros.append("Tu código de acceso temporal de Netflix")
-            if pin_input and cuenta.pin_final == pin_input and cuenta.filtro_dispositivo:
-                filtros.append("Un nuevo dispositivo está usando tu cuenta")
+            if opcion == "netflix" and cuenta.filtro_netflix:
+                filtros.append("inicio de sesión")
+            elif opcion == "actualizar_hogar" and cuenta.filtro_actualizar_hogar:
+                filtros.append("actualizar tu Hogar")
+            elif opcion == "codigo_temporal" and cuenta.filtro_codigo_temporal:
+                filtros.append("código de acceso temporal")
+            elif opcion == "dispositivo" and cuenta.filtro_dispositivo:
+                if not pin_input or cuenta.pin_final != pin_input:
+                    return jsonify({"resultado": "❌ PIN inválido o sin permiso."})
+                filtros.append("nuevo dispositivo está usando tu cuenta")
         else:
             return jsonify({"resultado": "❌ Esta cuenta no tiene cliente asociado."})
     else:
         return jsonify({"resultado": "❌ Esta cuenta no existe."})
 
     if not filtros:
-        return jsonify({"resultado": "❌ No hay filtros activos o el PIN no coincide."})
+        return jsonify({"resultado": "❌ No hay filtros activos o no coincide."})
 
     try:
         mail = imaplib.IMAP4_SSL(IMAP_SERVER, IMAP_PORT)
@@ -210,7 +217,7 @@ def consulta_hogar():
         status, data = mail.search(None, f'(TO "{correo_input}")')
         ids = data[0].split()
 
-        mensaje_final = "✅ No se encontró ningún correo filtrado para este correo."
+        mensaje_final = "✅ No se encontró correo válido para esta consulta."
 
         for num in reversed(ids):
             typ, msg_data = mail.fetch(num, '(RFC822)')
@@ -222,25 +229,48 @@ def consulta_hogar():
                 asunto = asunto.decode(errors="replace")
             asunto = asunto.lower().strip()
 
-            if any(f.lower() in asunto for f in filtros):
-                # Si es para 'netflix', intenta extraer el código (ejemplo simple)
+            if any(f in asunto for f in filtros):
+                # Obtener HTML
                 if msg.is_multipart():
                     for part in msg.walk():
-                        if part.get_content_type() == "text/plain":
-                            body = part.get_payload(decode=True).decode(errors="replace").strip()
+                        if part.get_content_type() == "text/html":
+                            html_body = part.get_payload(decode=True).decode(errors="replace")
                             break
                 else:
-                    body = msg.get_payload(decode=True).decode(errors="replace").strip()
+                    html_body = msg.get_payload(decode=True).decode(errors="replace")
 
-                match = re.search(r"\b(\d{4})\b", body)
-                if match:
-                    mensaje_final = f"✅ Tu código es: {match.group(1)}"
-                else:
-                    mensaje_final = "❌ No se encontró código numérico."
-            
-                break
+                soup = BeautifulSoup(html_body, 'html.parser')
+
+                if opcion == "actualizar_hogar":
+                    link = soup.find('a', string=re.compile("Sí, la envié yo"))
+                    if link and link['href']:
+                        mensaje_final = f"🔗 Para actualizar tu Hogar haz clic aquí: {link['href']}"
+                        break
+
+                elif opcion == "codigo_temporal":
+                    link = soup.find('a', string=re.compile("Obtener código"))
+                    if link and link['href']:
+                        mensaje_final = f"🔑 Código temporal disponible → Abre aquí: {link['href']}"
+                        break
+
+                elif opcion == "dispositivo":
+                    link = soup.find('a', string=re.compile("cambies la contraseña"))
+                    if link and link['href']:
+                        mensaje_final = f"🔒 Restablece tu clave aquí: {link['href']}"
+                        break
+
+                elif opcion == "netflix":
+                    # Para 'Netflix: inicio sesión', saca el número si hay
+                    body = soup.get_text()
+                    match = re.search(r"\b(\d{4})\b", body)
+                    if match:
+                        mensaje_final = f"✅ Tu código es: {match.group(1)}"
+                    else:
+                        mensaje_final = "❌ No se encontró código numérico."
+                    break
 
         mail.logout()
+
     except Exception as e:
         mensaje_final = f"❌ Error IMAP: {str(e)}"
 
