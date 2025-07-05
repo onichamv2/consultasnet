@@ -409,15 +409,6 @@ def api_generar_pin(cliente_id):
     db.session.commit()
     return {"success": True, "nuevo_pin": nuevo_pin}
 
-@panel_bp.route('/api/cuenta/<int:cuenta_id>/generar_pin_final', methods=['POST'])
-@login_required
-def api_generar_pin_final(cuenta_id):
-    cuenta = Cuenta.query.get_or_404(cuenta_id)
-    nuevo_pin = str(random.randint(1000, 9999))
-    cuenta.pin_final = nuevo_pin
-    db.session.commit()
-    return {"success": True, "nuevo_pin": nuevo_pin}
-
 # ✅ API para crear nuevo Cliente Final + su cuenta SIEMPRE con filtros activos
 @panel_bp.route('/api/nuevo_cliente_final', methods=['POST'])
 @login_required
