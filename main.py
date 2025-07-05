@@ -223,31 +223,20 @@ def consulta_hogar():
 
             if any(f.lower() in asunto for f in filtros):
                 # Si es para 'netflix', intenta extraer el código (ejemplo simple)
-                if "código" in asunto:
-                    if msg.is_multipart():
-                        for part in msg.walk():
-                            if part.get_content_type() == "text/plain":
-                                body = part.get_payload(decode=True).decode(errors="replace")
-                                mensaje_final = body.strip()
-                                break
-                    else:
-                        body = msg.get_payload(decode=True).decode(errors="replace")
-                        mensaje_final = body.strip()
+                if msg.is_multipart():
+                for part in msg.walk():
+                    if part.get_content_type() == "text/plain":
+                        body = part.get_payload(decode=True).decode(errors="replace").strip()
+                        break
                 else:
-                    # Si no es código, devuelve texto limpio
-                    if msg.is_multipart():
-                        for part in msg.walk():
-                            ctype = part.get_content_type()
-                            if ctype == "text/html":
-                                html = part.get_payload(decode=True).decode(errors="replace")
-                                mensaje_final = html
-                                break
-                            elif ctype == "text/plain":
-                                text = part.get_payload(decode=True).decode(errors="replace")
-                                mensaje_final = text
-                    else:
-                        mensaje_final = msg.get_payload(decode=True).decode(errors="replace")
-                break
+                    body = msg.get_payload(decode=True).decode(errors="replace")
+
+                    match = re.search(r"\b(\d{4})\b", body)
+            if match:
+                mensaje_final = f"✅ Tu código es: {match.group(1)}"
+            else:
+                mensaje_final = "❌ No se encontró código numérico."
+            break
 
         mail.logout()
     except Exception as e:
