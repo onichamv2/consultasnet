@@ -8,6 +8,7 @@ from flask import Flask, request, render_template, Response
 from flask_login import LoginManager
 from models import db, Cliente, Cuenta, AdminUser
 from panelAdmin import panel_bp
+from flask import jsonify
 
 # --------------------------
 # 📌 Cargar .env
@@ -157,6 +158,103 @@ def buscar():
         mensaje = f"<div class='alert alert-danger'>❌ Error IMAP: {str(e)}</div>"
 
     return Response(mensaje, content_type='text/html; charset=utf-8')
+
+#SI FALLA ESTO SE AÑADIO ULTIMO
+@app.route('/api/consulta_hogar', methods=['POST'])
+def consulta_hogar():
+    data = request.json
+    correo_input = data.get('correo', '').strip().lower()
+    pin_input = data.get('pin', '').strip()
+    opcion = data.get('opcion', '').strip()
+
+    if not correo_input:
+        return jsonify({"resultado": "❌ Debes enviar un correo válido."})
+
+    cuenta = Cuenta.query.filter(db.func.lower(Cuenta.correo) == correo_input).first()
+
+    filtros = []
+
+    if cuenta:
+        if cuenta.cliente:
+            if cuenta.filtro_netflix:
+                filtros.append("Netflix: Tu código de inicio de sesión")
+            if cuenta.filtro_actualizar_hogar:
+                filtros.append("Confirmación: Se ha confirmado tu Hogar con Netflix")
+            if cuenta.filtro_codigo_temporal:
+                filtros.append("Tu código de acceso temporal de Netflix")
+            if pin_input and cuenta.filtro_dispositivo:
+                filtros.append("Un nuevo dispositivo está usando tu cuenta")
+        elif cuenta.cliente_final:
+            if cuenta.filtro_netflix:
+                filtros.append("Netflix: Tu código de inicio de sesión")
+            if cuenta.filtro_actualizar_hogar:
+                filtros.append("Confirmación: Se ha confirmado tu Hogar con Netflix")
+            if cuenta.filtro_codigo_temporal:
+                filtros.append("Tu código de acceso temporal de Netflix")
+            if pin_input and cuenta.pin_final == pin_input and cuenta.filtro_dispositivo:
+                filtros.append("Un nuevo dispositivo está usando tu cuenta")
+        else:
+            return jsonify({"resultado": "❌ Esta cuenta no tiene cliente asociado."})
+    else:
+        return jsonify({"resultado": "❌ Esta cuenta no existe."})
+
+    if not filtros:
+        return jsonify({"resultado": "❌ No hay filtros activos o el PIN no coincide."})
+
+    try:
+        mail = imaplib.IMAP4_SSL(IMAP_SERVER, IMAP_PORT)
+        mail.login(IMAP_USER, IMAP_PASS)
+        mail.select("inbox")
+
+        status, data = mail.search(None, f'(TO "{correo_input}")')
+        ids = data[0].split()
+
+        mensaje_final = "✅ No se encontró ningún correo filtrado para este correo."
+
+        for num in reversed(ids):
+            typ, msg_data = mail.fetch(num, '(RFC822)')
+            raw_email = msg_data[0][1]
+            msg = email.message_from_bytes(raw_email)
+
+            asunto = email.header.decode_header(msg["Subject"])[0][0]
+            if isinstance(asunto, bytes):
+                asunto = asunto.decode(errors="replace")
+            asunto = asunto.lower().strip()
+
+            if any(f.lower() in asunto for f in filtros):
+                # Si es para 'netflix', intenta extraer el código (ejemplo simple)
+                if "código" in asunto:
+                    if msg.is_multipart():
+                        for part in msg.walk():
+                            if part.get_content_type() == "text/plain":
+                                body = part.get_payload(decode=True).decode(errors="replace")
+                                mensaje_final = body.strip()
+                                break
+                    else:
+                        body = msg.get_payload(decode=True).decode(errors="replace")
+                        mensaje_final = body.strip()
+                else:
+                    # Si no es código, devuelve texto limpio
+                    if msg.is_multipart():
+                        for part in msg.walk():
+                            ctype = part.get_content_type()
+                            if ctype == "text/html":
+                                html = part.get_payload(decode=True).decode(errors="replace")
+                                mensaje_final = html
+                                break
+                            elif ctype == "text/plain":
+                                text = part.get_payload(decode=True).decode(errors="replace")
+                                mensaje_final = text
+                    else:
+                        mensaje_final = msg.get_payload(decode=True).decode(errors="replace")
+                break
+
+        mail.logout()
+    except Exception as e:
+        mensaje_final = f"❌ Error IMAP: {str(e)}"
+
+    return jsonify({"resultado": mensaje_final})
+#HASTA AQUI
 
 # --------------------------
 # 📌 Run
