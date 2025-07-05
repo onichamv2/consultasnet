@@ -1,19 +1,17 @@
 import os
 import imaplib
 import email
-from dotenv import load_dotenv
-from app import app
 import re
+from dotenv import load_dotenv
 from bs4 import BeautifulSoup
+from threading import Thread
 
-from flask import Flask, request, render_template, Response
+from flask import Flask, request, render_template, Response, jsonify
 from flask_login import LoginManager
+from app import app
 from models import db, Cliente, Cuenta, AdminUser
 from panelAdmin import panel_bp
-from flask import jsonify
 
-# NUEVO: threading para optimizar
-from threading import Thread
 
 # --------------------------
 # 📌 Cargar .env
@@ -57,19 +55,21 @@ def load_user(user_id):
     return AdminUser.query.get(int(user_id))
 
 # --------------------------
-# 📌 Registrar Blueprint
+# 📌 Blueprint
 # --------------------------
 app.register_blueprint(panel_bp)
 
+
 # --------------------------
-# 🏠 Página principal
+# 🏠 Index
 # --------------------------
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html')
 
+
 # --------------------------
-# 📌 Función IMAP en Thread
+# 📌 Funciones IMAP con Thread
 # --------------------------
 def consulta_imap_thread(correo_input, filtros, resultado_dict):
     try:
@@ -114,6 +114,7 @@ def consulta_imap_thread(correo_input, filtros, resultado_dict):
 
     except Exception as e:
         resultado_dict["html"] = f"<div class='alert alert-danger'>❌ Error IMAP: {str(e)}</div>"
+
 
 def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado_dict):
     try:
@@ -180,8 +181,9 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
     except Exception as e:
         resultado_dict["msg"] = f"❌ Error IMAP: {str(e)}"
 
+
 # --------------------------
-# 📌 Ruta de búsqueda con Thread
+# 📌 Endpoint: /buscar
 # --------------------------
 @app.route('/buscar', methods=['POST'])
 def buscar():
@@ -211,7 +213,7 @@ def buscar():
                 filtros.append("Importante: Cómo actualizar tu Hogar con Netflix")
             if cuenta.filtro_codigo_temporal:
                 filtros.append("Tu código de acceso temporal de Netflix")
-            if pin_input and cuenta.pin_final and cuenta.pin_final == pin_input:
+            if pin_input and cuenta.pin_final == pin_input:
                 filtros.append("Un nuevo dispositivo está usando tu cuenta")
         else:
             return Response("<div class='alert alert-danger'>❌ Esta cuenta no tiene cliente asociado.</div>", content_type='text/html; charset=utf-8')
@@ -222,23 +224,20 @@ def buscar():
         return Response("<div class='alert alert-danger'>❌ No hay filtros activos o el PIN no coincide.</div>", content_type='text/html; charset=utf-8')
 
     resultado = {}
-    hilo = Thread(target=consulta_imap_thread, args=(correo_input, filtros, resultado))
-    hilo.start()
-    hilo.join(timeout=7)
+    Thread(target=consulta_imap_thread, args=(correo_input, filtros, resultado)).start()
+
+    # 🟢 TIP: puedes hacer respuesta inmediata + status 202 Accepted, aquí esperas por compatibilidad:
+    import time; time.sleep(3)
 
     mensaje = resultado.get("html", "<div class='alert alert-warning'>✅ No se encontró ningún correo filtrado para este correo.</div>")
-
     return Response(mensaje, content_type='text/html; charset=utf-8')
 
 
 # --------------------------
-# 📌 Tu /api/consulta_hogar intacto
+# 📌 Endpoint: /api/consulta_hogar
 # --------------------------
 @app.route('/api/consulta_hogar', methods=['POST'])
 def consulta_hogar():
-    import re
-    from bs4 import BeautifulSoup
-
     data = request.json
     correo_input = data.get('correo', '').strip().lower()
     pin_input = data.get('pin', '').strip()
@@ -282,9 +281,8 @@ def consulta_hogar():
         return jsonify({"resultado": "❌ No hay filtros activos o no coincide."})
 
     resultado = {}
-    hilo = Thread(target=consulta_imap_api_thread, args=(correo_input, filtros, opcion, pin_input, resultado))
-    hilo.start()
-    hilo.join(timeout=7)
+    Thread(target=consulta_imap_api_thread, args=(correo_input, filtros, opcion, pin_input, resultado)).start()
+    import time; time.sleep(3)
 
     return jsonify({"resultado": resultado.get("msg", "✅ No se encontró correo válido para esta consulta.")})
 
