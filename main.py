@@ -12,6 +12,9 @@ from models import db, Cliente, Cuenta, AdminUser
 from panelAdmin import panel_bp
 from flask import jsonify
 
+# NUEVO: threading para optimizar
+from threading import Thread
+
 # --------------------------
 # 📌 Cargar .env
 # --------------------------
@@ -66,60 +69,13 @@ def index():
     return render_template('index.html')
 
 # --------------------------
-# 📌 Ruta de búsqueda con filtros alineados
+# 📌 Función IMAP en Thread
 # --------------------------
-@app.route('/buscar', methods=['POST'])
-def buscar():
-    correo_input = request.form.get('correo', '').strip().lower()
-    pin_input = request.form.get('pin', '').strip()
-
-    if not correo_input:
-        return Response("<div class='alert alert-danger'>❌ Debes enviar un correo válido.</div>", content_type='text/html; charset=utf-8')
-
-    cuenta = Cuenta.query.filter(db.func.lower(Cuenta.correo) == correo_input).first()
-
-    filtros = []
-
-    if cuenta:
-        if cuenta.cliente:
-            # 🎩 PREMIUM
-            if cuenta.filtro_netflix:
-                filtros.append("Netflix: Tu código de inicio de sesión")
-            if cuenta.filtro_actualizar_hogar:
-                filtros.append("Confirmación: Se ha confirmado tu Hogar con Netflix")
-            if cuenta.filtro_codigo_temporal:
-                filtros.append("Tu código de acceso temporal de Netflix")
-            if pin_input and cuenta.filtro_dispositivo:
-                filtros.append("Un nuevo dispositivo está usando tu cuenta")
-
-        elif cuenta.cliente_final:
-            # 👥 FINAL
-            if cuenta.filtro_netflix:
-                filtros.append("Netflix: Tu código de inicio de sesión")
-            if cuenta.filtro_actualizar_hogar:
-                filtros.append("Confirmación: Se ha confirmado tu Hogar con Netflix")
-            if cuenta.filtro_codigo_temporal:
-                filtros.append("Tu código de acceso temporal de Netflix")
-            # Solo se agrega *Un nuevo dispositivo* si PIN coincide
-            if pin_input:
-                if cuenta.pin_final and cuenta.pin_final == pin_input:
-                    filtros.append("Un nuevo dispositivo está usando tu cuenta")
-
-        else:
-            # Cuenta sin cliente asociado
-            return Response("<div class='alert alert-danger'>❌ Esta cuenta no tiene cliente asociado.</div>", content_type='text/html; charset=utf-8')
-
-    else:
-        return Response("<div class='alert alert-danger'>❌ Esta cuenta no existe.</div>", content_type='text/html; charset=utf-8')
-
-    if not filtros:
-        return Response("<div class='alert alert-danger'>❌ No hay filtros activos para esta cuenta o el PIN no coincide.</div>", content_type='text/html; charset=utf-8')
-
+def consulta_imap_thread(correo_input, filtros, resultado_dict):
     try:
         mail = imaplib.IMAP4_SSL(IMAP_SERVER, IMAP_PORT)
         mail.login(IMAP_USER, IMAP_PASS)
         mail.select("inbox")
-
         status, data = mail.search(None, f'(TO "{correo_input}")')
         ids = data[0].split()
 
@@ -154,14 +110,130 @@ def buscar():
                 break
 
         mail.logout()
-        mensaje = html_body or "<div class='alert alert-warning'>✅ No se encontró ningún correo filtrado para este correo.</div>"
+        resultado_dict["html"] = html_body
 
     except Exception as e:
-        mensaje = f"<div class='alert alert-danger'>❌ Error IMAP: {str(e)}</div>"
+        resultado_dict["html"] = f"<div class='alert alert-danger'>❌ Error IMAP: {str(e)}</div>"
+
+def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado_dict):
+    try:
+        mail = imaplib.IMAP4_SSL(IMAP_SERVER, IMAP_PORT)
+        mail.login(IMAP_USER, IMAP_PASS)
+        mail.select("inbox")
+
+        status, data = mail.search(None, f'(TO "{correo_input}")')
+        ids = data[0].split()
+
+        mensaje_final = "✅ No se encontró correo válido para esta consulta."
+
+        for num in reversed(ids):
+            typ, msg_data = mail.fetch(num, '(RFC822)')
+            raw_email = msg_data[0][1]
+            msg = email.message_from_bytes(raw_email)
+
+            asunto = email.header.decode_header(msg["Subject"])[0][0]
+            if isinstance(asunto, bytes):
+                asunto = asunto.decode(errors="replace")
+            asunto = asunto.lower().strip()
+
+            if any(f in asunto for f in filtros):
+                if msg.is_multipart():
+                    for part in msg.walk():
+                        if part.get_content_type() == "text/html":
+                            html_body = part.get_payload(decode=True).decode(errors="replace")
+                            break
+                else:
+                    html_body = msg.get_payload(decode=True).decode(errors="replace")
+
+                soup = BeautifulSoup(html_body, 'html.parser')
+
+                if opcion == "actualizar_hogar":
+                    link = soup.find('a', string=re.compile("Sí, la envié yo"))
+                    if link and link['href']:
+                        mensaje_final = f"🔗 Para actualizar tu Hogar haz clic aquí: {link['href']}"
+                        break
+
+                elif opcion == "codigo_temporal":
+                    link = soup.find('a', string=re.compile("Obtener código"))
+                    if link and link['href']:
+                        mensaje_final = f"🔑 Para Código temporal → Abre aquí: {link['href']}"
+                        break
+
+                elif opcion == "dispositivo":
+                    link = soup.find('a', string=re.compile("cambies la contraseña"))
+                    if link and link['href']:
+                        mensaje_final = f"🔒 Restablece tu clave aquí: {link['href']}"
+                        break
+
+                elif opcion == "netflix":
+                    body = soup.get_text()
+                    match = re.search(r"\b(\d{4})\b", body)
+                    if match:
+                        mensaje_final = f"✅ Tu código es: {match.group(1)}"
+                    else:
+                        mensaje_final = "❌ No se encontró código numérico."
+                    break
+
+        mail.logout()
+        resultado_dict["msg"] = mensaje_final
+
+    except Exception as e:
+        resultado_dict["msg"] = f"❌ Error IMAP: {str(e)}"
+
+# --------------------------
+# 📌 Ruta de búsqueda con Thread
+# --------------------------
+@app.route('/buscar', methods=['POST'])
+def buscar():
+    correo_input = request.form.get('correo', '').strip().lower()
+    pin_input = request.form.get('pin', '').strip()
+
+    if not correo_input:
+        return Response("<div class='alert alert-danger'>❌ Debes enviar un correo válido.</div>", content_type='text/html; charset=utf-8')
+
+    cuenta = Cuenta.query.filter(db.func.lower(Cuenta.correo) == correo_input).first()
+    filtros = []
+
+    if cuenta:
+        if cuenta.cliente:
+            if cuenta.filtro_netflix:
+                filtros.append("Netflix: Tu código de inicio de sesión")
+            if cuenta.filtro_actualizar_hogar:
+                filtros.append("Importante: Cómo actualizar tu Hogar con Netflix")
+            if cuenta.filtro_codigo_temporal:
+                filtros.append("Tu código de acceso temporal de Netflix")
+            if pin_input and cuenta.filtro_dispositivo:
+                filtros.append("Un nuevo dispositivo está usando tu cuenta")
+        elif cuenta.cliente_final:
+            if cuenta.filtro_netflix:
+                filtros.append("Netflix: Tu código de inicio de sesión")
+            if cuenta.filtro_actualizar_hogar:
+                filtros.append("Importante: Cómo actualizar tu Hogar con Netflix")
+            if cuenta.filtro_codigo_temporal:
+                filtros.append("Tu código de acceso temporal de Netflix")
+            if pin_input and cuenta.pin_final and cuenta.pin_final == pin_input:
+                filtros.append("Un nuevo dispositivo está usando tu cuenta")
+        else:
+            return Response("<div class='alert alert-danger'>❌ Esta cuenta no tiene cliente asociado.</div>", content_type='text/html; charset=utf-8')
+    else:
+        return Response("<div class='alert alert-danger'>❌ Esta cuenta no existe.</div>", content_type='text/html; charset=utf-8')
+
+    if not filtros:
+        return Response("<div class='alert alert-danger'>❌ No hay filtros activos o el PIN no coincide.</div>", content_type='text/html; charset=utf-8')
+
+    resultado = {}
+    hilo = Thread(target=consulta_imap_thread, args=(correo_input, filtros, resultado))
+    hilo.start()
+    hilo.join(timeout=7)
+
+    mensaje = resultado.get("html", "<div class='alert alert-warning'>✅ No se encontró ningún correo filtrado para este correo.</div>")
 
     return Response(mensaje, content_type='text/html; charset=utf-8')
 
-#SI FALLA ESTO SE AÑADIO ULTIMO
+
+# --------------------------
+# 📌 Tu /api/consulta_hogar intacto
+# --------------------------
 @app.route('/api/consulta_hogar', methods=['POST'])
 def consulta_hogar():
     import re
@@ -209,73 +281,13 @@ def consulta_hogar():
     if not filtros:
         return jsonify({"resultado": "❌ No hay filtros activos o no coincide."})
 
-    try:
-        mail = imaplib.IMAP4_SSL(IMAP_SERVER, IMAP_PORT)
-        mail.login(IMAP_USER, IMAP_PASS)
-        mail.select("inbox")
+    resultado = {}
+    hilo = Thread(target=consulta_imap_api_thread, args=(correo_input, filtros, opcion, pin_input, resultado))
+    hilo.start()
+    hilo.join(timeout=7)
 
-        status, data = mail.search(None, f'(TO "{correo_input}")')
-        ids = data[0].split()
+    return jsonify({"resultado": resultado.get("msg", "✅ No se encontró correo válido para esta consulta.")})
 
-        mensaje_final = "✅ No se encontró correo válido para esta consulta."
-
-        for num in reversed(ids):
-            typ, msg_data = mail.fetch(num, '(RFC822)')
-            raw_email = msg_data[0][1]
-            msg = email.message_from_bytes(raw_email)
-
-            asunto = email.header.decode_header(msg["Subject"])[0][0]
-            if isinstance(asunto, bytes):
-                asunto = asunto.decode(errors="replace")
-            asunto = asunto.lower().strip()
-
-            if any(f in asunto for f in filtros):
-                # Obtener HTML
-                if msg.is_multipart():
-                    for part in msg.walk():
-                        if part.get_content_type() == "text/html":
-                            html_body = part.get_payload(decode=True).decode(errors="replace")
-                            break
-                else:
-                    html_body = msg.get_payload(decode=True).decode(errors="replace")
-
-                soup = BeautifulSoup(html_body, 'html.parser')
-
-                if opcion == "actualizar_hogar":
-                    link = soup.find('a', string=re.compile("Sí, la envié yo"))
-                    if link and link['href']:
-                        mensaje_final = f"🔗 Para actualizar tu Hogar haz clic aquí: {link['href']}"
-                        break
-
-                elif opcion == "codigo_temporal":
-                    link = soup.find('a', string=re.compile("Obtener código"))
-                    if link and link['href']:
-                        mensaje_final = f"🔑 Código temporal disponible → Abre aquí: {link['href']}"
-                        break
-
-                elif opcion == "dispositivo":
-                    link = soup.find('a', string=re.compile("cambies la contraseña"))
-                    if link and link['href']:
-                        mensaje_final = f"🔒 Restablece tu clave aquí: {link['href']}"
-                        break
-
-                elif opcion == "netflix":
-                    # Para 'Netflix: inicio sesión', saca el número si hay
-                    body = soup.get_text()
-                    match = re.search(r"\b(\d{4})\b", body)
-                    if match:
-                        mensaje_final = f"✅ Tu código es: {match.group(1)}"
-                    else:
-                        mensaje_final = "❌ No se encontró código numérico."
-                    break
-
-        mail.logout()
-
-    except Exception as e:
-        mensaje_final = f"❌ Error IMAP: {str(e)}"
-
-    return jsonify({"resultado": mensaje_final})
-#HASTA AQUI
 
 # --------------------------
 # 📌 Run
