@@ -8,6 +8,7 @@ from collections import defaultdict
 from models import ClienteFinal
 from urllib.parse import quote
 from sqlalchemy.orm import joinedload
+from sqlalchemy import func
 
 panel_bp = Blueprint('panel', __name__, url_prefix='/panel')
 
