@@ -7,6 +7,7 @@ from email.mime.text import MIMEText
 from collections import defaultdict
 from models import ClienteFinal
 from urllib.parse import quote
+from sqlalchemy.orm import joinedload
 
 panel_bp = Blueprint('panel', __name__, url_prefix='/panel')
 
@@ -106,10 +107,20 @@ def dashboard():
 @login_required
 def clientes():
     page = request.args.get('page', 1, type=int)
+
+    # Trae solo los clientes paginados
     pagination = Cliente.query.paginate(page=page, per_page=20)
-    return render_template('admin/clientes.html',
+
+    # 📌 PRE-CARGA la cantidad de cuentas por cliente (un solo query)
+    cuentas_por_cliente = {}
+    for cliente in pagination.items:
+        cuentas_por_cliente[cliente.id] = len(cliente.cuentas)
+
+    return render_template(
+        'admin/clientes.html',
         clientes=pagination.items,
         pagination=pagination,
+        cuentas_por_cliente=cuentas_por_cliente,  # ⚡️
         today=date.today()
     )
 
@@ -188,9 +199,14 @@ def api_update_cliente(cliente_id):
 @panel_bp.route('/clientes_finales')
 @login_required
 def clientes_finales():
-    cuentas = Cuenta.query.filter(Cuenta.cliente_final_id != None).all()
+    cuentas = (
+        db.session.query(Cuenta)
+        .options(joinedload(Cuenta.cliente_final))
+        .filter(Cuenta.cliente_final_id != None)
+        .all()
+    )
     today = datetime.now().date()
-    return render_template('admin/clientes_finales.html', cuentas=cuentas, today=today)
+    return render_template('admin/clientes_finales.html', cuentas=cuentas, today=today
 
 @panel_bp.route('/api/cuenta_final/<int:cuenta_id>')
 @login_required
