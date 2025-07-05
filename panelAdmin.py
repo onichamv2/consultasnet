@@ -108,19 +108,21 @@ def dashboard():
 def clientes():
     page = request.args.get('page', 1, type=int)
 
-    # Trae solo los clientes paginados
-    pagination = Cliente.query.paginate(page=page, per_page=20)
-
-    # 📌 PRE-CARGA la cantidad de cuentas por cliente (un solo query)
-    cuentas_por_cliente = {}
-    for cliente in pagination.items:
-        cuentas_por_cliente[cliente.id] = len(cliente.cuentas)
+    # ⚡️ Consulta con COUNT optimizado
+    pagination = (
+        db.session.query(
+            Cliente,
+            func.count(Cuenta.id).label('cuentas_count')
+        )
+        .outerjoin(Cuenta, Cuenta.cliente_id == Cliente.id)
+        .group_by(Cliente.id)
+        .paginate(page=page, per_page=20)
+    )
 
     return render_template(
         'admin/clientes.html',
         clientes=pagination.items,
         pagination=pagination,
-        cuentas_por_cliente=cuentas_por_cliente,  # ⚡️
         today=date.today()
     )
 

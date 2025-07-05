@@ -21,13 +21,13 @@
     </tr>
   </thead>
   <tbody class="text-center">
-    {% for cliente in clientes %}
+    {% for cliente, cuentas_count in clientes %}
     <tr>
       <td>{{ cliente.id }}</td>
       <td>{{ cliente.nombre }}</td>
       <td>{{ cliente.telefono }}</td>
       <td>
-        <span class="badge bg-secondary">{{ cliente.cuentas|length }}</span>
+        <span class="badge bg-secondary">{{ cuentas_count }}</span>
       </td>
       <td>
         <span id="pin-{{ cliente.id }}">{{ cliente.pin_restablecer or '----' }}</span>
@@ -49,7 +49,7 @@
         </a>
 
         <!-- ✅ Botón Reportar por WhatsApp -->
-        <a href="{{ url_for('panel.reportar_cuentas', cliente_id=cliente.id) }},"
+        <a href="{{ url_for('panel.reportar_cuentas', cliente_id=cliente.id) }}"
           class="btn btn-success btn-sm"
           target="_blank"
           rel="noopener noreferrer">
