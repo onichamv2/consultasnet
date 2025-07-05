@@ -229,14 +229,15 @@ def consulta_hogar():
                         body = part.get_payload(decode=True).decode(errors="replace").strip()
                         break
                 else:
-                    body = msg.get_payload(decode=True).decode(errors="replace")
+                    body = msg.get_payload(decode=True).decode(errors="replace").strip()
 
                     match = re.search(r"\b(\d{4})\b", body)
-            if match:
+                if match:
                 mensaje_final = f"✅ Tu código es: {match.group(1)}"
-            else:
+                else:
                 mensaje_final = "❌ No se encontró código numérico."
-            break
+            
+                break
 
         mail.logout()
     except Exception as e:
