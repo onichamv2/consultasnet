@@ -224,18 +224,18 @@ def consulta_hogar():
             if any(f.lower() in asunto for f in filtros):
                 # Si es para 'netflix', intenta extraer el código (ejemplo simple)
                 if msg.is_multipart():
-                for part in msg.walk():
-                    if part.get_content_type() == "text/plain":
-                        body = part.get_payload(decode=True).decode(errors="replace").strip()
-                        break
+                    for part in msg.walk():
+                        if part.get_content_type() == "text/plain":
+                            body = part.get_payload(decode=True).decode(errors="replace").strip()
+                            break
                 else:
                     body = msg.get_payload(decode=True).decode(errors="replace").strip()
 
-                    match = re.search(r"\b(\d{4})\b", body)
+                match = re.search(r"\b(\d{4})\b", body)
                 if match:
-                mensaje_final = f"✅ Tu código es: {match.group(1)}"
+                    mensaje_final = f"✅ Tu código es: {match.group(1)}"
                 else:
-                mensaje_final = "❌ No se encontró código numérico."
+                    mensaje_final = "❌ No se encontró código numérico."
             
                 break
 
