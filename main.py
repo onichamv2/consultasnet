@@ -138,32 +138,23 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
             asunto = email.header.decode_header(msg["Subject"])[0][0]
             if isinstance(asunto, bytes):
                 asunto = asunto.decode(errors="replace")
-            asunto = asunto.strip().lower()
+            asunto = asunto.lower().strip()
 
-            print("ASUNTO:", asunto)  # Debug para ver el asunto real
-            print("FILTROS:", filtros) # Debug filtros
+            print("ASUNTO:", asunto)  # Debug
+            print("FILTROS:", filtros)  # Debug
 
             if any(f.lower() in asunto for f in filtros):
                 print("Coincidencia de filtro ✔️")  # Debug
-                if msg.is_multipart():
-                    for part in msg.walk():
-                        if part.get_content_type() == "text/html":
-                            html_body = part.get_payload(decode=True).decode(errors="replace")
-                            break
-                else:
-                    html_body = msg.get_payload(decode=True).decode(errors="replace")
-
-                soup = BeautifulSoup(html_body, 'html.parser')
 
                 if opcion == "actualizar_hogar":
-                    h1 = soup.find('h1')
-                    if h1:
-                        mensaje_final = f"📢 {h1.get_text(strip=True)}"
-                    else:
-                        mensaje_final = "✅ Correo encontrado pero no se halló <h1>."
+                    # Solo devuelve el asunto limpio, tal como quieres
+                    mensaje_final = f"✅ Asunto encontrado: {asunto}"
                     break
 
-                elif opcion == "codigo_temporal":
+                # Si es otro filtro, sigue igual:
+                soup = BeautifulSoup(msg.get_payload(decode=True), 'html.parser')
+
+                if opcion == "codigo_temporal":
                     link = soup.find('a', string=re.compile("Obtener código"))
                     if link and link['href']:
                         mensaje_final = f"🔑 Para Código temporal → Abre aquí: {link['href']}"
