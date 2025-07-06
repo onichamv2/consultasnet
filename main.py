@@ -92,22 +92,25 @@ def consulta_imap_thread(correo_input, filtros, resultado_dict):
             asunto = asunto.lower().strip()
 
             if any(f.lower() in asunto for f in filtros):
+                print("Coincide filtro ✔️")
                 if msg.is_multipart():
                     for part in msg.walk():
-                        ctype = part.get_content_type()
-                        charset = part.get_content_charset() or "utf-8"
-                        if ctype == "text/html":
-                            html_body = part.get_payload(decode=True).decode(charset, errors="replace")
+                        if part.get_content_type() == "text/html":
+                            html_body = part.get_payload(decode=True).decode(errors="replace")
                             break
-                        elif ctype == "text/plain" and not html_body:
-                            html_body = f"<pre>{part.get_payload(decode=True).decode(charset, errors='replace')}</pre>"
                 else:
-                    charset = msg.get_content_charset() or "utf-8"
-                    if msg.get_content_type() == "text/html":
-                        html_body = msg.get_payload(decode=True).decode(charset, errors="replace")
-                    else:
-                        html_body = f"<pre>{msg.get_payload(decode=True).decode(charset, errors='replace')}</pre>"
+                    html_body = msg.get_payload(decode=True).decode(errors="replace")
+
+                soup = BeautifulSoup(html_body, 'html.parser')
+
+                # SIEMPRE muestra el h1 completo
+                h1 = soup.find('h1')
+                if h1:
+                    mensaje_final = f"📢 TITULAR: {h1.get_text(strip=True)}"
+                else:
+                    mensaje_final = f"✅ Coincide filtro pero NO hay <h1>."
                 break
+
 
         mail.logout()
         resultado_dict["html"] = html_body
