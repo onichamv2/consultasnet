@@ -167,11 +167,12 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
                         mensaje_final = "❌ No se encontró el enlace del botón para código temporal."
 
                 elif opcion == "dispositivo":
-                    link = soup.find('a', string=re.compile(r"cambiar la contraseña", re.I))
+                    link = soup.find('a', string=re.compile(r"cambi[a-z]* la contraseña", re.I))
                     if link and link.get('href'):
                         mensaje_final = f"🔒 Para restablecer tu contraseña haz clic aquí: {link['href']}"
                     else:
                         mensaje_final = "❌ No se encontró el enlace del botón para restablecer contraseña."
+
 
                 elif opcion == "netflix":
                     body = soup.get_text()
