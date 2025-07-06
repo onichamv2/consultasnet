@@ -149,10 +149,13 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
                 soup = BeautifulSoup(html_body, 'html.parser')
 
                 if opcion == "actualizar_hogar":
-                    link = soup.find('a', string=re.compile("Sí, la envié yo"))
-                    if link and link['href']:
-                        mensaje_final = f"🔗 Para actualizar tu Hogar haz clic aquí: {link['href']}"
-                        break
+                    # 📌 EXTRAER SOLO EL <h1>
+                    h1 = soup.find('h1')
+                    if h1:
+                        mensaje_final = f"📢 {h1.get_text(strip=True)}"
+                    else:
+                        mensaje_final = "✅ Correo encontrado pero no se halló <h1>."
+                    break
 
                 elif opcion == "codigo_temporal":
                     link = soup.find('a', string=re.compile("Obtener código"))
@@ -180,6 +183,7 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
 
     except Exception as e:
         resultado_dict["msg"] = f"❌ Error IMAP: {str(e)}"
+
 
 
 # --------------------------
