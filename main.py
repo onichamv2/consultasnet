@@ -153,12 +153,34 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
 
                 soup = BeautifulSoup(html_body, 'html.parser')
 
-                # Busca el botón por texto que contenga "Sí, la envié yo"
-                link = soup.find('a', string=re.compile("Sí, la envié yo"))
-                if link and link['href']:
-                    mensaje_final = f"🔗 Para actualizar tu hogar haz clic aquí: {link['href']}"
-                else:
-                    mensaje_final = "❌ No se encontró el enlace del botón."
+                if opcion == "actualizar_hogar":
+                    link = soup.find('a', string=re.compile("Sí, la envié yo"))
+                    if link and link['href']:
+                        mensaje_final = f"🔗 Para actualizar tu hogar haz clic aquí: {link['href']}"
+                    else:
+                        mensaje_final = "❌ No se encontró el enlace del botón."
+
+                elif opcion == "codigo_temporal":
+                    link = soup.find('a', string=re.compile("Obtener código"))
+                    if link and link['href']:
+                        mensaje_final = f"🔑 Para código temporal haz clic aquí: {link['href']}"
+                    else:
+                        mensaje_final = "❌ No se encontró el enlace del botón."
+
+                elif opcion == "dispositivo":
+                    link = soup.find('a', string=re.compile("cambiar la contraseña"))
+                    if link and link['href']:
+                        mensaje_final = f"🔒 Para restablecer tu contraseña haz clic aquí: {link['href']}"
+                    else:
+                        mensaje_final = "❌ No se encontró el enlace del botón."
+
+                elif opcion == "netflix":
+                    body = soup.get_text()
+                    match = re.search(r"\b(\d{4})\b", body)
+                    if match:
+                        mensaje_final = f"✅ Tu código de Netflix es: {match.group(1)}"
+                    else:
+                        mensaje_final = "❌ No se encontró código numérico."
 
                 break
 
@@ -167,6 +189,7 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
 
     except Exception as e:
         resultado_dict["msg"] = f"❌ Error IMAP: {str(e)}"
+
 
 # --------------------------
 # 📌 Endpoint: /buscar
