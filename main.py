@@ -247,60 +247,8 @@ def buscar():
 # --------------------------
 @app.route('/api/consulta_hogar', methods=['POST'])
 def consulta_hogar():
-    data = request.json
-    correo_input = data.get('correo', '').strip().lower()
-    pin_input = data.get('pin', '').strip()
-    opcion = data.get('opcion', '').strip()
+    return jsonify({"msg": "API viva ✅"})
 
-    if not correo_input:
-        return jsonify({"resultado": "❌ Debes enviar un correo válido."})
-
-    cuenta = Cuenta.query.filter(db.func.lower(Cuenta.correo) == correo_input).first()
-    filtros = []
-
-    if cuenta:
-        if cuenta.cliente:
-            if opcion == "netflix" and cuenta.filtro_netflix:
-                filtros.append("inicio de sesión")
-            elif opcion == "actualizar_hogar" and cuenta.filtro_actualizar_hogar:
-                filtros.append("Importante: Cómo actualizar tu Hogar con Netflix")
-            elif opcion == "codigo_temporal" and cuenta.filtro_codigo_temporal:
-                filtros.append("código de acceso temporal")
-            elif opcion == "dispositivo" and cuenta.filtro_dispositivo:
-                if cuenta.cliente:
-                    pin_valido = cuenta.cliente.pin_restablecer
-                else:
-                    pin_valido = cuenta.pin_final  # para clientes finales
-
-                if not pin_input or str(pin_input) != str(pin_valido):
-                    return jsonify({"resultado": "❌ PIN inválido o sin permiso."})
-
-                filtros.append("nuevo dispositivo está usando tu cuenta")
-
-        elif cuenta.cliente_final:
-            if opcion == "netflix" and cuenta.filtro_netflix:
-                filtros.append("inicio de sesión")
-            elif opcion == "actualizar_hogar" and cuenta.filtro_actualizar_hogar:
-                filtros.append("Importante: Cómo actualizar tu Hogar con Netflix")
-            elif opcion == "codigo_temporal" and cuenta.filtro_codigo_temporal:
-                filtros.append("código de acceso temporal")
-            elif opcion == "dispositivo" and cuenta.filtro_dispositivo:
-                if not pin_input or cuenta.pin_final != pin_input:
-                    return jsonify({"resultado": "❌ PIN inválido o sin permiso."})
-                filtros.append("nuevo dispositivo está usando tu cuenta")
-        else:
-            return jsonify({"resultado": "❌ Esta cuenta no tiene cliente asociado."})
-    else:
-        return jsonify({"resultado": "❌ Esta cuenta no existe."})
-
-    if not filtros:
-        return jsonify({"resultado": "❌ No hay filtros activos o no coincide."})
-
-    resultado = {}
-    Thread(target=consulta_imap_api_thread, args=(correo_input, filtros, opcion, pin_input, resultado)).start()
-    import time; time.sleep(3)
-
-    return jsonify({"resultado": resultado.get("msg", "✅ No se encontró correo válido para esta consulta.")})
 
 
 # --------------------------
