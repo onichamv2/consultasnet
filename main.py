@@ -152,11 +152,14 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
                     html_body = msg.get_payload(decode=True).decode(errors="replace")
 
                 soup = BeautifulSoup(html_body, 'html.parser')
-                titulo = soup.find('h1')
-                if titulo:
-                    mensaje_final = f"✅ {titulo.get_text(strip=True)}"
+
+                # Busca el botón por texto que contenga "Sí, la envié yo"
+                link = soup.find('a', string=re.compile("Sí, la envié yo"))
+                if link and link['href']:
+                    mensaje_final = f"🔗 Para actualizar tu hogar haz clic aquí: {link['href']}"
                 else:
-                    mensaje_final = f"📄 {soup.get_text()[:4000]}..."
+                    mensaje_final = "❌ No se encontró el enlace del botón."
+
                 break
 
         mail.logout()
@@ -164,8 +167,6 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
 
     except Exception as e:
         resultado_dict["msg"] = f"❌ Error IMAP: {str(e)}"
-
-
 
 # --------------------------
 # 📌 Endpoint: /buscar
