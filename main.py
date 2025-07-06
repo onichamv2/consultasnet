@@ -137,7 +137,7 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
                 asunto = asunto.decode(errors="replace")
             asunto = asunto.lower().strip()
 
-            if any(f in asunto for f in filtros):
+            if any(f.lower() in asunto for f in filtros):
                 if msg.is_multipart():
                     for part in msg.walk():
                         if part.get_content_type() == "text/html":
