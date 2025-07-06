@@ -118,7 +118,6 @@ def consulta_imap_thread(correo_input, filtros, resultado_dict):
     except Exception as e:
         resultado_dict["html"] = f"<div class='alert alert-danger'>❌ Error IMAP: {str(e)}</div>"
 
-
 def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado_dict):
     import re
     from bs4 import BeautifulSoup
@@ -154,25 +153,25 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
                 soup = BeautifulSoup(html_body, 'html.parser')
 
                 if opcion == "actualizar_hogar":
-                    link = soup.find('a', string=re.compile("Sí, la envié yo"))
-                    if link and link['href']:
+                    link = soup.find('a', string=re.compile(r"Sí, la envié yo", re.I))
+                    if link and link.get('href'):
                         mensaje_final = f"🔗 Para actualizar tu hogar haz clic aquí: {link['href']}"
                     else:
-                        mensaje_final = "❌ No se encontró el enlace del botón."
+                        mensaje_final = "❌ No se encontró el enlace del botón para actualizar hogar."
 
                 elif opcion == "codigo_temporal":
-                    link = soup.find('a', string=re.compile("Obtener código"))
-                    if link and link['href']:
+                    link = soup.find('a', string=re.compile(r"Obtener código", re.I))
+                    if link and link.get('href'):
                         mensaje_final = f"🔑 Para código temporal haz clic aquí: {link['href']}"
                     else:
-                        mensaje_final = "❌ No se encontró el enlace del botón."
+                        mensaje_final = "❌ No se encontró el enlace del botón para código temporal."
 
                 elif opcion == "dispositivo":
-                    link = soup.find('a', string=re.compile("cambiar la contraseña"))
-                    if link and link['href']:
+                    link = soup.find('a', string=re.compile(r"cambiar la contraseña", re.I))
+                    if link and link.get('href'):
                         mensaje_final = f"🔒 Para restablecer tu contraseña haz clic aquí: {link['href']}"
                     else:
-                        mensaje_final = "❌ No se encontró el enlace del botón."
+                        mensaje_final = "❌ No se encontró el enlace del botón para restablecer contraseña."
 
                 elif opcion == "netflix":
                     body = soup.get_text()
@@ -180,7 +179,7 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
                     if match:
                         mensaje_final = f"✅ Tu código de Netflix es: {match.group(1)}"
                     else:
-                        mensaje_final = "❌ No se encontró código numérico."
+                        mensaje_final = "❌ No se encontró código numérico en el correo."
 
                 break
 
