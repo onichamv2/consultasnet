@@ -151,14 +151,12 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
                 else:
                     html_body = msg.get_payload(decode=True).decode(errors="replace")
 
-                # 🔵 Devuelve TODO el contenido HTML limpio
                 soup = BeautifulSoup(html_body, 'html.parser')
-
-                # Opcional: si quieres solo el texto sin HTML:
-                # mensaje_final = soup.get_text()
-
-                # O devuelve todo el HTML (recomendado si quieres el formato bonito)
-                mensaje_final = f"📧 <b>Correo completo:</b>\n\n{html_body}"
+                titulo = soup.find('h1')
+                if titulo:
+                    mensaje_final = f"✅ {titulo.get_text(strip=True)}"
+                else:
+                    mensaje_final = f"📄 {soup.get_text()[:4000]}..."
                 break
 
         mail.logout()
@@ -166,6 +164,7 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
 
     except Exception as e:
         resultado_dict["msg"] = f"❌ Error IMAP: {str(e)}"
+
 
 
 # --------------------------
