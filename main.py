@@ -120,6 +120,8 @@ def consulta_imap_thread(correo_input, filtros, resultado_dict):
 
 
 def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado_dict):
+    import re
+    from bs4 import BeautifulSoup
     try:
         mail = imaplib.IMAP4_SSL(IMAP_SERVER, IMAP_PORT)
         mail.login(IMAP_USER, IMAP_PASS)
@@ -140,46 +142,31 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
                 asunto = asunto.decode(errors="replace")
             asunto = asunto.lower().strip()
 
-            print("ASUNTO:", asunto)  # Debug
-            print("FILTROS:", filtros)  # Debug
-
             if any(f.lower() in asunto for f in filtros):
-                print("Coincidencia de filtro ✔️")  # Debug
+                if msg.is_multipart():
+                    for part in msg.walk():
+                        if part.get_content_type() == "text/html":
+                            html_body = part.get_payload(decode=True).decode(errors="replace")
+                            break
+                else:
+                    html_body = msg.get_payload(decode=True).decode(errors="replace")
 
-                if opcion == "actualizar_hogar":
-                    # Solo devuelve el asunto limpio, tal como quieres
-                    mensaje_final = f"✅ Asunto encontrado: {asunto}"
-                    break
+                # 🔵 Devuelve TODO el contenido HTML limpio
+                soup = BeautifulSoup(html_body, 'html.parser')
 
-                # Si es otro filtro, sigue igual:
-                soup = BeautifulSoup(msg.get_payload(decode=True), 'html.parser')
+                # Opcional: si quieres solo el texto sin HTML:
+                # mensaje_final = soup.get_text()
 
-                if opcion == "codigo_temporal":
-                    link = soup.find('a', string=re.compile("Obtener código"))
-                    if link and link['href']:
-                        mensaje_final = f"🔑 Para Código temporal → Abre aquí: {link['href']}"
-                        break
-
-                elif opcion == "dispositivo":
-                    link = soup.find('a', string=re.compile("cambies la contraseña"))
-                    if link and link['href']:
-                        mensaje_final = f"🔒 Restablece tu clave aquí: {link['href']}"
-                        break
-
-                elif opcion == "netflix":
-                    body = soup.get_text()
-                    match = re.search(r"\b(\d{4})\b", body)
-                    if match:
-                        mensaje_final = f"✅ Tu código es: {match.group(1)}"
-                    else:
-                        mensaje_final = "❌ No se encontró código numérico."
-                    break
+                # O devuelve todo el HTML (recomendado si quieres el formato bonito)
+                mensaje_final = f"📧 <b>Correo completo:</b>\n\n{html_body}"
+                break
 
         mail.logout()
         resultado_dict["msg"] = mensaje_final
 
     except Exception as e:
         resultado_dict["msg"] = f"❌ Error IMAP: {str(e)}"
+
 
 # --------------------------
 # 📌 Endpoint: /buscar
