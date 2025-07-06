@@ -135,9 +135,13 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
             asunto = email.header.decode_header(msg["Subject"])[0][0]
             if isinstance(asunto, bytes):
                 asunto = asunto.decode(errors="replace")
-            asunto = asunto.lower().strip()
+            asunto = asunto.strip().lower()
+
+            print("ASUNTO:", asunto)  # Debug para ver el asunto real
+            print("FILTROS:", filtros) # Debug filtros
 
             if any(f.lower() in asunto for f in filtros):
+                print("Coincidencia de filtro ✔️")  # Debug
                 if msg.is_multipart():
                     for part in msg.walk():
                         if part.get_content_type() == "text/html":
@@ -149,7 +153,6 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
                 soup = BeautifulSoup(html_body, 'html.parser')
 
                 if opcion == "actualizar_hogar":
-                    # 📌 EXTRAER SOLO EL <h1>
                     h1 = soup.find('h1')
                     if h1:
                         mensaje_final = f"📢 {h1.get_text(strip=True)}"
@@ -183,8 +186,6 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
 
     except Exception as e:
         resultado_dict["msg"] = f"❌ Error IMAP: {str(e)}"
-
-
 
 # --------------------------
 # 📌 Endpoint: /buscar
