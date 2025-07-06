@@ -266,15 +266,16 @@ def consulta_hogar():
             elif opcion == "codigo_temporal" and cuenta.filtro_codigo_temporal:
                 filtros.append("código de acceso temporal")
             elif opcion == "dispositivo" and cuenta.filtro_dispositivo:
-            if cuenta.cliente:
-                pin_valido = cuenta.cliente.pin_restablecer
-            else:
-                pin_valido = cuenta.pin_final  # para clientes finales
+                if cuenta.cliente:
+                    pin_valido = cuenta.cliente.pin_restablecer
+                else:
+                    pin_valido = cuenta.pin_final  # para clientes finales
 
-            if not pin_input or str(pin_input) != str(pin_valido):
-                return jsonify({"resultado": "❌ PIN inválido o sin permiso."})
+                if not pin_input or str(pin_input) != str(pin_valido):
+                    return jsonify({"resultado": "❌ PIN inválido o sin permiso."})
 
-            filtros.append("nuevo dispositivo está usando tu cuenta")
+                filtros.append("nuevo dispositivo está usando tu cuenta")
+
         elif cuenta.cliente_final:
             if opcion == "netflix" and cuenta.filtro_netflix:
                 filtros.append("inicio de sesión")
