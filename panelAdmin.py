@@ -431,9 +431,10 @@ def buscar_correo():
         if cuenta.cliente_id:
             return redirect(url_for('panel.cuentas_cliente', cliente_id=cuenta.cliente_id))
         elif cuenta.cliente_final_id:
-            return redirect(url_for('panel.detalle_cuenta_final', cuenta_id=cuenta.id))
+            return redirect(url_for('panel.clientes_finales'))
     flash("❌ No se encontró ninguna cuenta con ese correo.")
     return redirect(url_for('panel.dashboard'))
+
 
 @panel_bp.route('/api/cliente/<int:cliente_id>/generar_pin', methods=['POST'])
 @login_required
@@ -506,17 +507,6 @@ def renovar_cuenta_final(cuenta_id):
     db.session.commit()
     flash('✅ Cuenta Final renovada +30 días.')
     return redirect(url_for('panel.clientes_finales'))
-
-
-@panel_bp.route('/clientes_finales/eliminar/<int:cliente_id>', methods=['POST'])
-@login_required
-def eliminar_cliente_final(cliente_id):
-    cliente = ClienteFinal.query.get_or_404(cliente_id)
-    db.session.delete(cliente)  # 💥 Borrará su cuenta también
-    db.session.commit()
-    flash("✅ Cliente Final eliminado.")
-    return redirect(url_for('panel.clientes_finales'))
-
 
 @panel_bp.route('/clientes/<int:cliente_id>/reportar')
 @login_required
