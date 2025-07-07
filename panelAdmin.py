@@ -163,6 +163,40 @@ def nuevo_cliente():
 
     return render_template('admin/nuevo_cliente.html')
 
+# 🚀 Endpoint para AJAX del modal
+@panel_bp.route('/api/cliente/nuevo', methods=['POST'])
+@login_required
+def api_nuevo_cliente():
+    data = request.get_json()
+    nombre = data.get('nombre')
+    telefono = data.get('telefono')
+
+    if not nombre or not telefono:
+        return jsonify(success=False, error="Faltan datos")
+
+    nuevo_cliente = Cliente(
+        nombre=nombre,
+        telefono=telefono
+    )
+    db.session.add(nuevo_cliente)
+    db.session.commit()
+
+    hoy = datetime.now().date()
+    nueva_cuenta = Cuenta(
+        correo=f"{nombre.lower().replace(' ', '_')}@fakecorreo.com",
+        fecha_compra=hoy,
+        fecha_expiracion=hoy + timedelta(days=30),
+        cliente_id=nuevo_cliente.id,
+        filtro_netflix=True,
+        filtro_dispositivo=True,
+        filtro_actualizar_hogar=True,
+        filtro_codigo_temporal=True
+    )
+    db.session.add(nueva_cuenta)
+    db.session.commit()
+
+    return jsonify(success=True)
+
 # NUEVO ENDPOINT PARA MODAL SIN RECARGA
 @panel_bp.route('/api/cliente/nuevo', methods=['POST'])
 @login_required
