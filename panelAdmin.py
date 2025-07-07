@@ -539,6 +539,43 @@ def reportar_cuentas(cliente_id):
 
     return redirect(whatsapp_link)
 
+# -------------------------------
+# 📌 Ruta para CLIENTES FINALES
+# -------------------------------
+
+@panel_bp.route('/cuenta_final/<int:cuenta_id>/reportar')
+@login_required
+def reportar_cuenta_final(cuenta_id):
+    cuenta = Cuenta.query.get_or_404(cuenta_id)
+
+    vencida = ""
+    if cuenta.fecha_expiracion:
+        fecha_exp = cuenta.fecha_expiracion
+        fecha_fmt = fecha_exp.strftime('%d/%m/%Y')
+        if fecha_exp < datetime.now().date():
+            vencida = f"🧾 {cuenta.correo} (Expiró: {fecha_fmt})"
+
+    if not vencida:
+        mensaje = f"👋 Hola! Por ahora no tienes cuentas vencidas. ✅"
+    else:
+        mensaje = (
+            f"👋 Hola!\n"
+            f"Tienes esta cuenta vencida:\n\n"
+            f"{vencida}\n\n"
+            "Por favor contáctame para renovarla."
+        )
+
+    mensaje_encoded = quote(mensaje)
+
+    telefono = cuenta.telefono or ""
+    if telefono.startswith("0"):
+        telefono = telefono[1:]
+    if not telefono.startswith("51"):
+        telefono = "51" + telefono
+
+    whatsapp_link = f"https://wa.me/{telefono}?text={mensaje_encoded}"
+    return redirect(whatsapp_link)
+
 @panel_bp.route('/api/nueva_cuenta_premium', methods=['POST'])
 def api_nueva_cuenta_premium():
     from flask import request, jsonify
