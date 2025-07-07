@@ -164,7 +164,7 @@ def nuevo_cliente():
     return render_template('admin/nuevo_cliente.html')
 
 # NUEVO ENDPOINT PARA MODAL SIN RECARGA
-@panel_bp.route('/panel/api/cliente/nuevo', methods=['POST'])
+@panel_bp.route('/api/cliente/nuevo', methods=['POST'])
 @login_required
 def api_nuevo_cliente():
     data = request.get_json()
