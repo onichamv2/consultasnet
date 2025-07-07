@@ -164,14 +164,15 @@ def nuevo_cliente():
     return render_template('admin/nuevo_cliente.html')
 
 
-@panel_bp.route('/clientes/<int:cliente_id>/eliminar', methods=['POST'])
+@panel_bp.route('/clientes_finales/eliminar/<int:cliente_id>', methods=['POST'])
 @login_required
-def eliminar_cliente(cliente_id):
-    cliente = Cliente.query.get_or_404(cliente_id)
-    db.session.delete(cliente)  # 🔥 Elimina cliente y todas sus cuentas por cascade
+def eliminar_cliente_final(cliente_id):
+    cliente = ClienteFinal.query.get_or_404(cliente_id)
+    db.session.delete(cliente)
     db.session.commit()
-    flash('✅ Cliente y todas sus cuentas eliminadas.')
-    return redirect(url_for('panel.clientes'))
+    flash("✅ Cliente Final eliminado.")
+    return redirect(url_for('panel.clientes_finales'))
+
 
 
 @panel_bp.route('/api/cliente/<int:cliente_id>')
@@ -203,7 +204,7 @@ def clientes_finales():
     cuentas = (
         db.session.query(Cuenta)
         .options(joinedload(Cuenta.cliente_final))
-        .filter(Cuenta.cliente_final_id != None)
+        .filter(Cuenta.cliente_final_id.isnot(None))
         .all()
     )
     today = datetime.now().date()
