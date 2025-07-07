@@ -543,26 +543,24 @@ def reportar_cuentas(cliente_id):
 # 📌 Ruta para CLIENTES FINALES
 # -------------------------------
 
-@panel_bp.route('/cuenta_final/<int:cuenta_id>/reportar')
+@panel_bp.route('/cuenta_final/<int:cliente_id>/reportar')
 @login_required
-def reportar_cuenta_final(cuenta_id):
-    cuenta = Cuenta.query.get_or_404(cuenta_id)
-    cliente = cuenta.cliente_final
+def reportar_cuenta_final(cliente_id):
+    cliente = ClienteFinal.query.get_or_404(cliente_id)
 
     vencidas = []
-    if cuenta.fecha_expiracion:
-        fecha_exp = cuenta.fecha_expiracion
-        if fecha_exp < datetime.now().date():
-            vencidas.append(f"📌 {cuenta.correo}")
+    for cuenta in cliente.cuentas:  # Suponiendo que tienes relación backref
+        if cuenta.fecha_expiracion and cuenta.fecha_expiracion < datetime.now().date():
+            vencidas.append(f"{cuenta.correo} (Expiró: {cuenta.fecha_expiracion})")
 
     if not vencidas:
         mensaje = f"✅ Hola {cliente.nombre}, por ahora no tienes cuentas vencidas."
     else:
         mensaje = (
             f"📌 Hola {cliente.nombre}:\n"
-            f"Tienes estas cuentas vencidas:\n"
-            + "\n".join(vencidas)
-            + "\n\nPor favor, contáctame para renovarlas."
+            f"Tienes estas cuentas vencidas:\n\n"
+            + "\n".join(vencidas) +
+            "\n\nPor favor contáctame para renovarlas."
         )
 
     mensaje_encoded = quote(mensaje)
@@ -574,8 +572,8 @@ def reportar_cuenta_final(cuenta_id):
         telefono = "51" + telefono
 
     whatsapp_link = f"https://wa.me/{telefono}?text={mensaje_encoded}"
-
     return redirect(whatsapp_link)
+
 
 
 @panel_bp.route('/api/nueva_cuenta_premium', methods=['POST'])

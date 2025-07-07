@@ -45,12 +45,15 @@ class ClienteFinal(db.Model):
     nombre = db.Column(db.String(100))
     telefono = db.Column(db.String(100))
     pin_restablecer = db.Column(db.String(10))
+
+    # ✅ Relación final → cuentas
     cuentas = db.relationship(
         'Cuenta',
         back_populates='cliente_final',
         cascade='all, delete',
         lazy=True
     )
+
 
 
 # ---------------------------
