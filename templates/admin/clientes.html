@@ -36,12 +36,9 @@
         </button>
       </td>
       <td>
-        <!-- ✅ Botón EDITAR con modal -->
         <button 
-          class="btn btn-warning btn-sm"
-          data-id="{{ cliente.id }}"
-          data-bs-toggle="modal"
-          data-bs-target="#editClienteModal">
+          class="btn btn-warning btn-sm open-edit-cliente"
+          data-id="{{ cliente.id }}">
           Editar
         </button>
 
@@ -49,7 +46,7 @@
           Ver Cuentas
         </a>
 
-        <!-- ✅ Botón ELIMINAR -->
+        <!-- ✅ BOTÓN ELIMINAR CON MODAL -->
         <button class="btn btn-danger btn-sm"
                 data-bs-toggle="modal"
                 data-bs-target="#confirmDeleteModal"
@@ -72,6 +69,7 @@
 </table>
 
 <!-- ✅ Modal NUEVO Cliente -->
+<!-- ✅ Modal NUEVO Cliente SOLO NOMBRE Y TELÉFONO -->
 <div class="modal fade" id="nuevoClienteModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -99,35 +97,8 @@
   </div>
 </div>
 
-<!-- ✅ Modal EDITAR Cliente -->
-<div class="modal fade" id="editClienteModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="POST" id="editClienteForm">
-        <div class="modal-header">
-          <h5 class="modal-title">Editar Cliente</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label>Nombre</label>
-            <input type="text" name="nombre" id="editClienteNombre" class="form-control" required>
-          </div>
-          <div class="mb-3">
-            <label>Teléfono</label>
-            <input type="text" name="telefono" id="editClienteTelefono" class="form-control" required>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
 
-<!-- ✅ Modal CONFIRMAR ELIMINAR -->
+<!-- ✅ MODAL BONITO PARA CONFIRMAR ELIMINACIÓN -->
 <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -169,42 +140,13 @@ function generarPin(clienteId) {
   });
 }
 
-// ✅ Script Eliminar
+// ✅ Script para pasar el ID al modal de eliminar
 const confirmDeleteModal = document.getElementById('confirmDeleteModal');
 confirmDeleteModal.addEventListener('show.bs.modal', event => {
   const button = event.relatedTarget;
   const clienteId = button.getAttribute('data-cliente-id');
   const form = document.getElementById('deleteClienteForm');
   form.action = `/panel/clientes/${clienteId}/eliminar`;
-});
-
-// ✅ Script Editar
-const editClienteModal = document.getElementById('editClienteModal');
-editClienteModal.addEventListener('show.bs.modal', event => {
-  const button = event.relatedTarget;
-  const clienteId = button.getAttribute('data-id');
-
-  fetch(`/panel/api/cliente/${clienteId}`)
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById('editClienteNombre').value = data.nombre;
-      document.getElementById('editClienteTelefono').value = data.telefono;
-      document.getElementById('editClienteForm').action = `/panel/api/cliente/${clienteId}`;
-    });
-});
-
-document.getElementById('editClienteForm').addEventListener('submit', function (e) {
-  e.preventDefault();
-  const form = e.target;
-  const clienteId = form.action.split('/').pop();
-  fetch(`/panel/api/cliente/${clienteId}`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      nombre: document.getElementById('editClienteNombre').value,
-      telefono: document.getElementById('editClienteTelefono').value
-    })
-  }).then(() => window.location.reload());
 });
 </script>
 {% endblock %}

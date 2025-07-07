@@ -135,39 +135,43 @@ def clientes():
     )
 
 
-@panel_bp.route('/clientes/nuevo', methods=['POST'])
+@panel_bp.route('/clientes/nuevo', methods=['GET', 'POST'])
 @login_required
 def nuevo_cliente():
-    nombre = request.form['nombre']
-    telefono = request.form['telefono']
+    if request.method == 'POST':
+        nombre = request.form['nombre']
+        telefono = request.form['telefono']
 
-    # ✅ Generar PIN al crear cliente
-    nuevo_pin = str(random.randint(1000, 9999))
+        # ✅ Generar PIN al crear cliente
+        nuevo_pin = str(random.randint(1000, 9999))
 
-    nuevo_cliente = Cliente(
-        nombre=nombre,
-        telefono=telefono,
-        pin_restablecer=nuevo_pin
-    )
-    db.session.add(nuevo_cliente)
-    db.session.commit()
+        nuevo_cliente = Cliente(
+            nombre=nombre,
+            telefono=telefono,
+            pin_restablecer=nuevo_pin   # <-- Aquí lo guardas
+        )
+        db.session.add(nuevo_cliente)
+        db.session.commit()
 
-    hoy = datetime.now().date()
-    nueva_cuenta = Cuenta(
-        correo=f"{nombre.lower().replace(' ', '_')}@fakecorreo.com",
-        fecha_compra=hoy,
-        fecha_expiracion=hoy + timedelta(days=30),
-        cliente_id=nuevo_cliente.id,
-        filtro_netflix=True,
-        filtro_dispositivo=True,
-        filtro_actualizar_hogar=True,
-        filtro_codigo_temporal=True
-    )
-    db.session.add(nueva_cuenta)
-    db.session.commit()
+        hoy = datetime.now().date()
+        nueva_cuenta = Cuenta(
+            correo=correo,
+            fecha_compra=hoy,
+            fecha_expiracion=hoy + timedelta(days=30),
+            cliente_id=nuevo_cliente.id,
+            filtro_netflix=True,
+            filtro_dispositivo=True,
+            filtro_actualizar_hogar=True,
+            filtro_codigo_temporal=True
+        )
+        db.session.add(nueva_cuenta)
+        db.session.commit()
 
-    flash(f'✅ Cliente creado correctamente. PIN: {nuevo_pin}')
-    return redirect(url_for('panel.clientes'))
+        flash(f'✅ Cliente creado correctamente. PIN: {nuevo_pin}')
+        return redirect(url_for('panel.clientes'))
+
+    return render_template('admin/nuevo_cliente.html')
+
 
 # 🚀 Endpoint para AJAX del modal
 @panel_bp.route('/api/cliente/nuevo', methods=['POST'])
@@ -207,6 +211,7 @@ def api_nuevo_cliente():
 @login_required
 def eliminar_cliente(cliente_id):
     cliente = Cliente.query.get_or_404(cliente_id)
+
     cuentas = Cuenta.query.filter_by(cliente_id=cliente.id).all()
     if cuentas:
         flash("❌ No puedes eliminar este cliente porque tiene cuentas asignadas.")
@@ -234,7 +239,7 @@ def eliminar_cliente_final(cliente_id):
 @login_required
 def api_get_cliente(cliente_id):
     cliente = Cliente.query.get_or_404(cliente_id)
-    return jsonify{
+    return {
         "id": cliente.id,
         "nombre": cliente.nombre,
         "telefono": cliente.telefono
@@ -248,7 +253,7 @@ def api_update_cliente(cliente_id):
     cliente.nombre = data.get('nombre')
     cliente.telefono = data.get('telefono')
     db.session.commit()
-    return jsonify(success=True)
+    return {"success": True}
 
 # ---------------------------
 # 📋 CLIENTES FINALES
@@ -288,12 +293,12 @@ def api_get_cuenta_final(cuenta_id):
 # ✅ NUEVO: Generar PIN Final por fetch()
 @panel_bp.route('/api/cuenta_final/<int:cuenta_id>/generar_pin_final', methods=['POST'])
 @login_required
-def api_generar_pin(cliente_id):
-    cliente = Cliente.query.get_or_404(cliente_id)
+def api_generar_pin_final(cuenta_id):
+    cuenta = Cuenta.query.get_or_404(cuenta_id)
     nuevo_pin = str(random.randint(1000, 9999))
-    cliente.pin_restablecer = nuevo_pin
+    cuenta.pin_final = nuevo_pin
     db.session.commit()
-    return jsonify(success=True, nuevo_pin=nuevo_pin)
+    return {"success": True, "nuevo_pin": nuevo_pin}
 
 @panel_bp.route('/api/cuenta_final/<int:cuenta_id>', methods=['POST'])
 @login_required
