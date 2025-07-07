@@ -151,9 +151,6 @@ def nuevo_cliente():
     db.session.add(nuevo_cliente)
     db.session.commit()
 
-    db.session.add(nueva_cuenta)
-    db.session.commit()
-
     flash(f'✅ Cliente creado correctamente. PIN: {nuevo_pin}')
     return redirect(url_for('panel.clientes'))
 
