@@ -141,7 +141,6 @@ def nuevo_cliente():
     if request.method == 'POST':
         nombre = request.form['nombre']
         telefono = request.form['telefono']
-        correo = request.form['correo']
 
         # ✅ Generar PIN al crear cliente
         nuevo_pin = str(random.randint(1000, 9999))
