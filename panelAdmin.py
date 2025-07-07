@@ -168,13 +168,11 @@ def nuevo_cliente():
 @login_required
 def eliminar_cliente(cliente_id):
     cliente = Cliente.query.get_or_404(cliente_id)
-    if cliente.cuentas:
-        flash('❌ No puedes eliminar este cliente porque tiene cuentas activas.')
-    else:
-        db.session.delete(cliente)
-        db.session.commit()
-        flash('✅ Cliente eliminado.')
+    db.session.delete(cliente)  # 🔥 Elimina cliente y todas sus cuentas por cascade
+    db.session.commit()
+    flash('✅ Cliente y todas sus cuentas eliminadas.')
     return redirect(url_for('panel.clientes'))
+
 
 @panel_bp.route('/api/cliente/<int:cliente_id>')
 @login_required
