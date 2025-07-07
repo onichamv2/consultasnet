@@ -197,40 +197,6 @@ def api_nuevo_cliente():
 
     return jsonify(success=True)
 
-# NUEVO ENDPOINT PARA MODAL SIN RECARGA
-@panel_bp.route('/api/cliente/nuevo', methods=['POST'])
-@login_required
-def api_nuevo_cliente():
-    data = request.get_json()
-    nombre = data.get('nombre')
-    telefono = data.get('telefono')
-
-    if not nombre or not telefono:
-        return jsonify(success=False, error="Faltan datos")
-
-    nuevo_cliente = Cliente(
-        nombre=nombre,
-        telefono=telefono
-    )
-    db.session.add(nuevo_cliente)
-    db.session.commit()
-
-    hoy = datetime.now().date()
-    nueva_cuenta = Cuenta(
-        correo=f"{nombre.lower().replace(' ', '_')}@fakecorreo.com",
-        fecha_compra=hoy,
-        fecha_expiracion=hoy + timedelta(days=30),
-        cliente_id=nuevo_cliente.id,
-        filtro_netflix=True,
-        filtro_dispositivo=True,
-        filtro_actualizar_hogar=True,
-        filtro_codigo_temporal=True
-    )
-    db.session.add(nueva_cuenta)
-    db.session.commit()
-
-    return jsonify(success=True)
-
 
 @panel_bp.route('/clientes_finales/eliminar/<int:cliente_id>', methods=['POST'])
 @login_required
@@ -328,26 +294,6 @@ def api_update_cuenta_final(cuenta_id):
     if fecha_expiracion_str:
         cuenta.fecha_expiracion = datetime.strptime(fecha_expiracion_str, '%Y-%m-%d').date()
 
-    db.session.commit()
-    return {"success": True}
-
-    
-
-    db.session.add(nuevo_cliente)
-    db.session.commit()
-    hoy = datetime.now().date()
-    nueva_cuenta = Cuenta(
-        correo=data.get('correo'),
-        fecha_compra=hoy,
-        fecha_expiracion=hoy + timedelta(days=30),
-        cliente_final_id=nuevo_cliente.id,
-        filtro_netflix=data.get('filtro_netflix', True),
-        filtro_dispositivo=data.get('filtro_dispositivo', True),
-        filtro_actualizar_hogar=data.get('filtro_actualizar_hogar', True),
-        filtro_codigo_temporal=data.get('filtro_codigo_temporal', True),
-        pin_final=str(random.randint(1000, 9999))
-    )
-    db.session.add(nueva_cuenta)
     db.session.commit()
     return {"success": True}
 
