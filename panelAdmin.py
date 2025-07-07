@@ -109,11 +109,12 @@ def dashboard():
 def clientes():
     page = request.args.get('page', 1, type=int)
 
-    # ⚡️ Consulta con COUNT optimizado
+    # Consulta básica de clientes con COUNT de cuentas
     pagination = (
         db.session.query(
             Cliente,
-            func.count(Cuenta.id).label('cuentas_count')
+            func.count(Cuenta.id).label('cuentas_count'),
+            func.sum(func.case([(Cuenta.fecha_expiracion < datetime.now().date(), 1)], else_=0)).label('vencidas_count')
         )
         .outerjoin(Cuenta, Cuenta.cliente_id == Cliente.id)
         .group_by(Cliente.id)
@@ -126,6 +127,7 @@ def clientes():
         pagination=pagination,
         today=date.today()
     )
+
 
 @panel_bp.route('/clientes/nuevo', methods=['GET', 'POST'])
 @login_required

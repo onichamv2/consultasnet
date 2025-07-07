@@ -21,7 +21,7 @@
     </tr>
   </thead>
   <tbody class="text-center">
-    {% for cliente, cuentas_count in clientes %}
+    {% for cliente, cuentas_count, vencidas_count in clientes %}
     <tr>
       <td>{{ cliente.id }}</td>
       <td>{{ cliente.nombre }}</td>
@@ -46,12 +46,14 @@
           Ver Cuentas
         </a>
 
+        {% if vencidas_count > 0 %}
         <a href="{{ url_for('panel.reportar_cuentas', cliente_id=cliente.id) }}"
           class="btn btn-success btn-sm"
           target="_blank"
           rel="noopener noreferrer">
           📤 Reportar
         </a>
+        {% endif %}
       </td>
     </tr>
     {% endfor %}
@@ -100,7 +102,6 @@ function generarPin(clienteId) {
   .then(res => res.json())
   .then(data => {
     if (data.success) {
-      // Actualiza el <span> del PIN sin recargar la página
       document.getElementById(`pin-${clienteId}`).innerText = data.nuevo_pin;
     } else {
       alert('❌ No se pudo generar el PIN.');
