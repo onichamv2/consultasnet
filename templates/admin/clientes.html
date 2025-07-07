@@ -63,34 +63,36 @@
 
 <!-- ✅ Modal Editar Cliente -->
 <!-- ✅ Modal NUEVO Cliente -->
-<div class="modal fade" id="nuevoClienteModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="nuevoClienteForm">
-        <div class="modal-header">
-          <h5 class="modal-title">Nuevo Cliente</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label>Nombre</label>
-            <input type="text" id="nuevoClienteNombre" class="form-control" required>
-          </div>
-          <div class="mb-3">
-            <label>Teléfono</label>
-            <input type="text" id="nuevoClienteTelefono" class="form-control" required>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Guardar</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const nuevoClienteModal = new bootstrap.Modal(document.getElementById('nuevoClienteModal'));
+  const nuevoClienteForm = document.getElementById('nuevoClienteForm');
 
+  nuevoClienteForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    fetch('/panel/api/cliente/nuevo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: document.getElementById('nuevoClienteNombre').value,
+        telefono: document.getElementById('nuevoClienteTelefono').value
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      } else {
+        alert('Error al crear');
+      }
+    });
+  });
+});
+</script>
 {% endblock %}
+
 
 {% block extra_scripts %}
 <script>
