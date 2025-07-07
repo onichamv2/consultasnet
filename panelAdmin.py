@@ -518,13 +518,13 @@ def reportar_cuentas(cliente_id):
             vencidas.append(f"📌 *{cuenta.correo}* (Sin fecha de expiración)")
 
     if not vencidas:
-        mensaje = f"👋 Hola {cliente.nombre}, por ahora no tienes cuentas vencidas. ✅"
+        mensaje = f" Hola {cliente.nombre}, por ahora no tienes cuentas vencidas. "
     else:
         mensaje = (
-            f"👋 Hola *{cliente.nombre}*:\n"
+            f" Hola *{cliente.nombre}*:\n"
             f"Tienes estas cuentas vencidas:\n\n"
             + "\n".join(vencidas) +
-            "\n\nPor favor, contáctame para renovarlas. 🔄"
+            "\n\nPor favor, contáctame para renovarlas y evitar corte de su servicio."
         )
 
     mensaje_encoded = quote(mensaje)
@@ -556,14 +556,14 @@ def reportar_cuenta_final(cliente_id):
     nombre = cliente.nombre or "🤗"
 
     if not vencidas:
-        mensaje = f"👋 Hola {nombre}, por ahora no tienes cuentas vencidas. ✅"
+        mensaje = f" Hola {nombre}, por ahora no tienes cuentas vencidas. "
         
     else:
         mensaje = (
-            f"👋 Hola {nombre}:\n"
+            f"👋 Hola :) :\n"
             f"Tienes estas cuentas vencidas:\n\n"
             + "\n".join(vencidas) +
-            "\n\nPor favor, contáctame para renovarlas. :)"
+            "\n\nPor favor, contáctame para renovarlas y evitar corte de su servicio. :)"
         )
 
     mensaje_encoded = quote(mensaje)
