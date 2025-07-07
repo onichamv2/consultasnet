@@ -209,6 +209,12 @@ def clientes_finales():
     today = datetime.now().date()
     return render_template('admin/clientes_finales.html', cuentas=cuentas, today=today)
 
+@panel_bp.route('/cuenta_final/<int:cuenta_id>')
+@login_required
+def detalle_cuenta_final(cuenta_id):
+    cuenta = Cuenta.query.get_or_404(cuenta_id)
+    return render_template('admin/detalle_cuenta_final.html', cuenta=cuenta)
+
 @panel_bp.route('/api/cuenta_final/<int:cuenta_id>')
 @login_required
 def api_get_cuenta_final(cuenta_id):
@@ -422,7 +428,10 @@ def cuentas_vencidas():
 def buscar_correo():
     cuenta = Cuenta.query.filter_by(correo=request.args.get('correo')).first()
     if cuenta:
-        return redirect(url_for('panel.cuentas_cliente', cliente_id=cuenta.cliente_id)) if cuenta.cliente_id else redirect(url_for('panel.clientes_finales'))
+        if cuenta.cliente_id:
+            return redirect(url_for('panel.cuentas_cliente', cliente_id=cuenta.cliente_id))
+        elif cuenta.cliente_final_id:
+            return redirect(url_for('panel.detalle_cuenta_final', cuenta_id=cuenta.id))
     flash("❌ No se encontró ninguna cuenta con ese correo.")
     return redirect(url_for('panel.dashboard'))
 
