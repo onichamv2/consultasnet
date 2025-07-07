@@ -135,42 +135,27 @@ def clientes():
     )
 
 
-@panel_bp.route('/clientes/nuevo', methods=['GET', 'POST'])
+@panel_bp.route('/clientes/nuevo', methods=['POST'])
 @login_required
 def nuevo_cliente():
-    if request.method == 'POST':
-        nombre = request.form['nombre']
-        telefono = request.form['telefono']
+    nombre = request.form['nombre']
+    telefono = request.form['telefono']
 
-        # ✅ Generar PIN al crear cliente
-        nuevo_pin = str(random.randint(1000, 9999))
+    nuevo_pin = str(random.randint(1000, 9999))
 
-        nuevo_cliente = Cliente(
-            nombre=nombre,
-            telefono=telefono,
-            pin_restablecer=nuevo_pin   # <-- Aquí lo guardas
-        )
-        db.session.add(nuevo_cliente)
-        db.session.commit()
+    nuevo_cliente = Cliente(
+        nombre=nombre,
+        telefono=telefono,
+        pin_restablecer=nuevo_pin
+    )
+    db.session.add(nuevo_cliente)
+    db.session.commit()
 
-        hoy = datetime.now().date()
-        nueva_cuenta = Cuenta(
-            correo=correo,
-            fecha_compra=hoy,
-            fecha_expiracion=hoy + timedelta(days=30),
-            cliente_id=nuevo_cliente.id,
-            filtro_netflix=True,
-            filtro_dispositivo=True,
-            filtro_actualizar_hogar=True,
-            filtro_codigo_temporal=True
-        )
-        db.session.add(nueva_cuenta)
-        db.session.commit()
+    db.session.add(nueva_cuenta)
+    db.session.commit()
 
-        flash(f'✅ Cliente creado correctamente. PIN: {nuevo_pin}')
-        return redirect(url_for('panel.clientes'))
-
-    return render_template('admin/nuevo_cliente.html')
+    flash(f'✅ Cliente creado correctamente. PIN: {nuevo_pin}')
+    return redirect(url_for('panel.clientes'))
 
 
 # 🚀 Endpoint para AJAX del modal
