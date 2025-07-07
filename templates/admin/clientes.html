@@ -45,7 +45,13 @@
         <a href="{{ url_for('panel.cuentas_cliente', cliente_id=cliente.id) }}" class="btn btn-primary btn-sm">
           Ver Cuentas
         </a>
-
+        
+        <form method="POST" action="{{ url_for('panel.eliminar_cliente', cliente_id=cliente.id) }}" style="display:inline;">
+          <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Seguro que quieres eliminar este cliente?')">
+            Eliminar
+          </button>
+        </form>
+        
         {% if vencidas_count > 0 %}
         <a href="{{ url_for('panel.reportar_cuentas', cliente_id=cliente.id) }}"
           class="btn btn-success btn-sm"

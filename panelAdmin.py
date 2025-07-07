@@ -208,6 +208,15 @@ def api_nuevo_cliente():
 
     return jsonify(success=True)
 
+@panel_bp.route('/clientes/eliminar/<int:cliente_id>', methods=['POST'])
+@login_required
+def eliminar_cliente(cliente_id):
+    cliente = Cliente.query.get_or_404(cliente_id)
+    db.session.delete(cliente)
+    db.session.commit()
+    flash("✅ Cliente eliminado.")
+    return redirect(url_for('panel.clientes'))
+
 
 @panel_bp.route('/clientes_finales/eliminar/<int:cliente_id>', methods=['POST'])
 @login_required
