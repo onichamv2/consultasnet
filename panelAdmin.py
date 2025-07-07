@@ -116,9 +116,10 @@ def clientes():
             func.count(Cuenta.id).label('cuentas_count'),
             func.sum(
                 case(
-                    [(Cuenta.fecha_expiracion < datetime.now().date(), 1)],
+                    (Cuenta.fecha_expiracion < datetime.now().date(), 1),
                     else_=0
                 )
+
             ).label('vencidas_count')
         )
         .outerjoin(Cuenta, Cuenta.cliente_id == Cliente.id)
