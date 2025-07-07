@@ -209,6 +209,7 @@ def clientes_finales():
     today = datetime.now().date()
     return render_template('admin/clientes_finales.html', cuentas=cuentas, today=today)
 
+
 @panel_bp.route('/cuenta_final/<int:cuenta_id>')
 @login_required
 def detalle_cuenta_final(cuenta_id):

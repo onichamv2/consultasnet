@@ -48,8 +48,9 @@
           ❌ No
         {% endif %}
       </td>
+
+      <!-- ✅ BLOQUE ACCIONES CORREGIDO -->
       <td>
-        <!-- ✅ Botón EDITAR TELÉFONO -->
         <button type="button"
           class="btn btn-warning btn-sm open-edit-modal-final"
           data-id="{{ cuenta.id }}">
@@ -61,18 +62,19 @@
           <button type="submit" class="btn btn-info btn-sm">Renovar</button>
         </form>
 
-        <form action="{{ url_for('panel.eliminar_cliente_final', cliente_id=cuenta.cliente_final.id) }}"
-              method="POST" style="display:inline;">
-          <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
-        </form>
+        {% if cuenta.cliente_final %}
+          <form action="{{ url_for('panel.eliminar_cliente_final', cliente_id=cuenta.cliente_final.id) }}"
+                method="POST" style="display:inline;">
+            <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+          </form>
 
-        <!-- 📌 Botón REPORTAR para cliente final -->
-        <a href="{{ url_for('panel.reportar_cuenta_final', cliente_id=cuenta.cliente_final.id) }}"
-          class="btn btn-success btn-sm"
-          target="_blank"
-          rel="noopener noreferrer">
-          📩 Reportar
-        </a>
+          <a href="{{ url_for('panel.reportar_cuenta_final', cliente_id=cuenta.cliente_final.id) }}"
+            class="btn btn-success btn-sm"
+            target="_blank"
+            rel="noopener noreferrer">
+            📩 Reportar
+          </a>
+        {% endif %}
       </td>
     </tr>
     {% endfor %}
@@ -100,11 +102,11 @@
           </div>
           <div class="mb-3">
             <label>Fecha de Compra</label>
-            <input type="date" class="form-control" id="fecha_compra" name="fecha_compra">  
-          </div>    
+            <input type="date" class="form-control" id="fecha_compra" name="fecha_compra">
+          </div>
           <div class="mb-3">
             <label>Fecha Expiración</label>
-            <input type="date" class="form-control" id="fecha_expiracion" name="fecha_expiracion">  
+            <input type="date" class="form-control" id="fecha_expiracion" name="fecha_expiracion">
           </div>
         </div>
         <div class="modal-footer">
@@ -265,15 +267,15 @@
   });
 
   function generarPinFinal(cuentaId) {
-  fetch(`/panel/api/cuenta_final/${cuentaId}/generar_pin_final`, { method: 'POST' })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        document.getElementById(`pin-${cuentaId}`).innerText = data.nuevo_pin;
-      } else {
-        alert('❌ Error al generar PIN');
-      }
-    });
+    fetch(`/panel/api/cuenta_final/${cuentaId}/generar_pin_final`, { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          document.getElementById(`pin-${cuentaId}`).innerText = data.nuevo_pin;
+        } else {
+          alert('❌ Error al generar PIN');
+        }
+      });
   }
 </script>
 {% endblock %}
