@@ -90,3 +90,26 @@
   </div>
 </div>
 {% endblock %}
+
+{% block extra_scripts %}
+<script>
+function generarPin(clienteId) {
+  fetch(`/panel/api/cliente/${clienteId}/generar_pin`, {
+    method: 'POST'
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      // Actualiza el <span> del PIN sin recargar la página
+      document.getElementById(`pin-${clienteId}`).innerText = data.nuevo_pin;
+    } else {
+      alert('❌ No se pudo generar el PIN.');
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Error de red.');
+  });
+}
+</script>
+{% endblock %}
