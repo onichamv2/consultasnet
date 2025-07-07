@@ -45,13 +45,15 @@
         <a href="{{ url_for('panel.cuentas_cliente', cliente_id=cliente.id) }}" class="btn btn-primary btn-sm">
           Ver Cuentas
         </a>
-        
-        <form method="POST" action="{{ url_for('panel.eliminar_cliente', cliente_id=cliente.id) }}" style="display:inline;">
-          <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Seguro que quieres eliminar este cliente?')">
-            Eliminar
-          </button>
-        </form>
-        
+
+        <!-- ✅ BOTÓN ELIMINAR CON MODAL -->
+        <button class="btn btn-danger btn-sm"
+                data-bs-toggle="modal"
+                data-bs-target="#confirmDeleteModal"
+                data-cliente-id="{{ cliente.id }}">
+          Eliminar
+        </button>
+
         {% if vencidas_count > 0 %}
         <a href="{{ url_for('panel.reportar_cuentas', cliente_id=cliente.id) }}"
           class="btn btn-success btn-sm"
@@ -66,7 +68,7 @@
   </tbody>
 </table>
 
-<!-- ✅ Modal NUEVO Cliente SIN FETCH -->
+<!-- ✅ Modal NUEVO Cliente -->
 <div class="modal fade" id="nuevoClienteModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -97,6 +99,27 @@
     </div>
   </div>
 </div>
+
+<!-- ✅ MODAL BONITO PARA CONFIRMAR ELIMINACIÓN -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" id="deleteClienteForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Confirmar Eliminación</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          ¿Estás seguro de que quieres eliminar este cliente?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -118,5 +141,14 @@ function generarPin(clienteId) {
     alert('Error de red.');
   });
 }
+
+// ✅ Script para pasar el ID al modal de eliminar
+const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+confirmDeleteModal.addEventListener('show.bs.modal', event => {
+  const button = event.relatedTarget;
+  const clienteId = button.getAttribute('data-cliente-id');
+  const form = document.getElementById('deleteClienteForm');
+  form.action = `/panel/clientes/${clienteId}/eliminar`;
+});
 </script>
 {% endblock %}

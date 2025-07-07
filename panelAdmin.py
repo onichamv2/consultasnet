@@ -212,10 +212,18 @@ def api_nuevo_cliente():
 @login_required
 def eliminar_cliente(cliente_id):
     cliente = Cliente.query.get_or_404(cliente_id)
+
+    # ✅ Verificar si tiene cuentas vinculadas
+    cuentas = Cuenta.query.filter_by(cliente_id=cliente.id).all()
+    if cuentas:
+        flash("❌ No puedes eliminar este cliente porque tiene cuentas asignadas.")
+        return redirect(url_for('panel.clientes'))
+
     db.session.delete(cliente)
     db.session.commit()
     flash("✅ Cliente eliminado.")
     return redirect(url_for('panel.clientes'))
+
 
 
 @panel_bp.route('/clientes_finales/eliminar/<int:cliente_id>', methods=['POST'])
