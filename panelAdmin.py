@@ -485,7 +485,7 @@ def renovar_cuenta_final(cuenta_id):
     cuenta = Cuenta.query.get_or_404(cuenta_id)
     hoy = datetime.now().date()
 
-    base = max(hoy, cuenta.fecha_expiracion)
+    base = cuenta.fecha_expiracion
     cuenta.fecha_expiracion = base + timedelta(days=30)
 
     # ✅ NO toques fecha_compra
