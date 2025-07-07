@@ -8,7 +8,7 @@ from collections import defaultdict
 from models import ClienteFinal
 from urllib.parse import quote
 from sqlalchemy.orm import joinedload
-from sqlalchemy import func
+from sqlalchemy import func, case
 
 panel_bp = Blueprint('panel', __name__, url_prefix='/panel')
 
@@ -114,7 +114,12 @@ def clientes():
         db.session.query(
             Cliente,
             func.count(Cuenta.id).label('cuentas_count'),
-            func.sum(func.case([(Cuenta.fecha_expiracion < datetime.now().date(), 1)], else_=0)).label('vencidas_count')
+            func.sum(
+                case(
+                    [(Cuenta.fecha_expiracion < datetime.now().date(), 1)],
+                    else_=0
+                )
+            ).label('vencidas_count')
         )
         .outerjoin(Cuenta, Cuenta.cliente_id == Cliente.id)
         .group_by(Cliente.id)
