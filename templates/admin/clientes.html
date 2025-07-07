@@ -36,19 +36,16 @@
         </button>
       </td>
       <td>
-        <!-- Botón Editar -->
         <button 
           class="btn btn-warning btn-sm open-edit-cliente"
           data-id="{{ cliente.id }}">
           Editar
         </button>
 
-        <!-- Botón Ver Cuentas -->
         <a href="{{ url_for('panel.cuentas_cliente', cliente_id=cliente.id) }}" class="btn btn-primary btn-sm">
           Ver Cuentas
         </a>
 
-        <!-- ✅ Botón Reportar por WhatsApp -->
         <a href="{{ url_for('panel.reportar_cuentas', cliente_id=cliente.id) }}"
           class="btn btn-success btn-sm"
           target="_blank"
@@ -61,11 +58,11 @@
   </tbody>
 </table>
 
-<!-- ✅ Modal NUEVO Cliente -->
+<!-- ✅ Modal NUEVO Cliente SIN FETCH -->
 <div class="modal fade" id="nuevoClienteModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form id="nuevoClienteForm">
+      <form method="POST" action="/panel/clientes/nuevo">
         <div class="modal-header">
           <h5 class="modal-title">Nuevo Cliente</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -73,11 +70,15 @@
         <div class="modal-body">
           <div class="mb-3">
             <label>Nombre</label>
-            <input type="text" id="nuevoClienteNombre" class="form-control" required>
+            <input type="text" name="nombre" class="form-control" required>
           </div>
           <div class="mb-3">
             <label>Teléfono</label>
-            <input type="text" id="nuevoClienteTelefono" class="form-control" required>
+            <input type="text" name="telefono" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Correo</label>
+            <input type="email" name="correo" class="form-control" required>
           </div>
         </div>
         <div class="modal-footer">
@@ -89,37 +90,3 @@
   </div>
 </div>
 {% endblock %}
-
-{% block extra_scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const nuevoClienteForm = document.getElementById('nuevoClienteForm');
-
-  nuevoClienteForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    fetch('/panel/api/cliente/nuevo', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nombre: document.getElementById('nuevoClienteNombre').value,
-        telefono: document.getElementById('nuevoClienteTelefono').value
-      })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        location.reload();
-      } else {
-        alert('Error al crear');
-      }
-    })
-    .catch(err => {
-      console.error("Error:", err);
-      alert('Fallo de red');
-    });
-  });
-});
-</script>
-{% endblock %}
-
