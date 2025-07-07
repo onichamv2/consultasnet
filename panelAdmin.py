@@ -208,12 +208,11 @@ def api_nuevo_cliente():
 
     return jsonify(success=True)
 
-@panel_bp.route('/clientes/eliminar/<int:cliente_id>', methods=['POST'])
+@panel_bp.route('/clientes/<int:cliente_id>/eliminar', methods=['POST'])
 @login_required
 def eliminar_cliente(cliente_id):
     cliente = Cliente.query.get_or_404(cliente_id)
 
-    # ✅ Verificar si tiene cuentas vinculadas
     cuentas = Cuenta.query.filter_by(cliente_id=cliente.id).all()
     if cuentas:
         flash("❌ No puedes eliminar este cliente porque tiene cuentas asignadas.")
