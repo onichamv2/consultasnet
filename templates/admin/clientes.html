@@ -92,30 +92,34 @@
 
 {% block extra_scripts %}
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const nuevoClienteModal = new bootstrap.Modal(document.getElementById('nuevoClienteModal'));
-    const nuevoClienteForm = document.getElementById('nuevoClienteForm');
+document.addEventListener('DOMContentLoaded', () => {
+  const nuevoClienteForm = document.getElementById('nuevoClienteForm');
 
-    nuevoClienteForm.addEventListener('submit', (e) => {
-      e.preventDefault();
+  nuevoClienteForm.addEventListener('submit', (e) => {
+    e.preventDefault();
 
-      fetch('/panel/api/cliente/nuevo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre: document.getElementById('nuevoClienteNombre').value,
-          telefono: document.getElementById('nuevoClienteTelefono').value
-        })
+    fetch('/panel/api/cliente/nuevo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: document.getElementById('nuevoClienteNombre').value,
+        telefono: document.getElementById('nuevoClienteTelefono').value
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          location.reload();
-        } else {
-          alert('Error al crear');
-        }
-      });
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      } else {
+        alert('Error al crear');
+      }
+    })
+    .catch(err => {
+      console.error("Error:", err);
+      alert('Fallo de red');
     });
   });
+});
 </script>
 {% endblock %}
+
