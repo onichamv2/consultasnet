@@ -563,10 +563,10 @@ def reportar_cuenta_final(cliente_id):
             f"👋 Hola {nombre}:\n"
             f"Tienes estas cuentas vencidas:\n\n"
             + "\n".join(vencidas) +
-            "\n\nPor favor, contáctame para renovarlas."
+            "\n\nPor favor, contáctame para renovarlas. :)"
         )
-        
-    mensaje_encoded = quote(mensaje, safe="")
+
+    mensaje_encoded = quote(mensaje)
     telefono = cliente.telefono or ""
     if telefono.startswith("0"):
         telefono = telefono[1:]
