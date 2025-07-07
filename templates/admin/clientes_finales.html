@@ -67,7 +67,7 @@
         </form>
 
         <!-- 📌 Botón REPORTAR para cliente final -->
-        <a href="{{ url_for('panel.reportar_cuenta_final', cliente_id=cliente.id) }}">
+        <a href="{{ url_for('panel.reportar_cuenta_final', cliente_id=cuenta.cliente_final.id) }}"
           class="btn btn-success btn-sm"
           target="_blank"
           rel="noopener noreferrer">
