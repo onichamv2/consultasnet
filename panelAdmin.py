@@ -553,11 +553,13 @@ def reportar_cuenta_final(cliente_id):
         if cuenta.fecha_expiracion and cuenta.fecha_expiracion < datetime.now().date():
             vencidas.append(f"📧 {cuenta.correo}")
 
+    nombre = cliente.nombre or "🤗"
+
     if not vencidas:
-        mensaje = f"👋 Hola {cliente.nombre}, por ahora no tienes cuentas vencidas. ✅"
+        mensaje = f"👋 Hola {nombre}, por ahora no tienes cuentas vencidas. ✅"
     else:
         mensaje = (
-            f"👋 Hola {cliente.nombre}:\n"
+            f"👋 Hola {nombre}:\n"
             f"Tienes estas cuentas vencidas:\n\n"
             + "\n".join(vencidas) +
             "\n\nPor favor, contáctame para renovarlas."
