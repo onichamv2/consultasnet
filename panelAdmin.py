@@ -209,7 +209,7 @@ def clientes_finales():
         .all()
     )
     today = datetime.now().date()
-    return render_template('admin/clientes_finales.html', clientes=clientes)
+    return render_template('admin/clientes_finales.html', cuentas=cuentas, today=today)
 
 @panel_bp.route('/api/cuenta_final/<int:cuenta_id>')
 @login_required
