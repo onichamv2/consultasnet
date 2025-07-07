@@ -207,7 +207,6 @@ def api_nuevo_cliente():
 @login_required
 def eliminar_cliente(cliente_id):
     cliente = Cliente.query.get_or_404(cliente_id)
-
     cuentas = Cuenta.query.filter_by(cliente_id=cliente.id).all()
     if cuentas:
         flash("❌ No puedes eliminar este cliente porque tiene cuentas asignadas.")
@@ -235,7 +234,7 @@ def eliminar_cliente_final(cliente_id):
 @login_required
 def api_get_cliente(cliente_id):
     cliente = Cliente.query.get_or_404(cliente_id)
-    return {
+    return jsonify{
         "id": cliente.id,
         "nombre": cliente.nombre,
         "telefono": cliente.telefono
@@ -249,7 +248,7 @@ def api_update_cliente(cliente_id):
     cliente.nombre = data.get('nombre')
     cliente.telefono = data.get('telefono')
     db.session.commit()
-    return {"success": True}
+    return jsonify(success=True)
 
 # ---------------------------
 # 📋 CLIENTES FINALES
@@ -289,12 +288,12 @@ def api_get_cuenta_final(cuenta_id):
 # ✅ NUEVO: Generar PIN Final por fetch()
 @panel_bp.route('/api/cuenta_final/<int:cuenta_id>/generar_pin_final', methods=['POST'])
 @login_required
-def api_generar_pin_final(cuenta_id):
-    cuenta = Cuenta.query.get_or_404(cuenta_id)
+def api_generar_pin(cliente_id):
+    cliente = Cliente.query.get_or_404(cliente_id)
     nuevo_pin = str(random.randint(1000, 9999))
-    cuenta.pin_final = nuevo_pin
+    cliente.pin_restablecer = nuevo_pin
     db.session.commit()
-    return {"success": True, "nuevo_pin": nuevo_pin}
+    return jsonify(success=True, nuevo_pin=nuevo_pin)
 
 @panel_bp.route('/api/cuenta_final/<int:cuenta_id>', methods=['POST'])
 @login_required
