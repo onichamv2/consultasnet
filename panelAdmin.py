@@ -240,14 +240,23 @@ def api_update_cuenta_final(cuenta_id):
     data = request.get_json()
     cuenta = Cuenta.query.get_or_404(cuenta_id)
 
-    # 🔑 SOLO actualiza lo que envías: telefono y correo
     if cuenta.cliente_final:
         cuenta.cliente_final.telefono = data.get('telefono')
 
     cuenta.correo = data.get('correo')
-    # NO SE TOCAN pin_final, fecha_compra, fecha_expiracion
+
+    # ✅ AÑADE ESTO:
+    fecha_compra_str = data.get('fecha_compra')
+    fecha_expiracion_str = data.get('fecha_expiracion')
+
+    if fecha_compra_str:
+        cuenta.fecha_compra = datetime.strptime(fecha_compra_str, '%Y-%m-%d').date()
+    if fecha_expiracion_str:
+        cuenta.fecha_expiracion = datetime.strptime(fecha_expiracion_str, '%Y-%m-%d').date()
+
     db.session.commit()
     return {"success": True}
+
     
 
     db.session.add(nuevo_cliente)

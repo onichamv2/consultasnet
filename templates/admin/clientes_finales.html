@@ -98,6 +98,14 @@
             <label>Correo</label>
             <input type="email" id="correoFinal" class="form-control" required>
           </div>
+          <div class="mb-3">
+            <label>Fecha de Compra</label>
+            <input type="date" class="form-control" id="fecha_compra" name="fecha_compra">  
+          </div>    
+          <div class="mb-3">
+            <label>Fecha Expiración</label>
+            <input type="date" class="form-control" id="fecha_expiracion" name="fecha_expiracion">  
+          </div>
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary">Guardar</button>
@@ -191,6 +199,8 @@
             document.getElementById('cuentaIdFinal').value = data.id;
             document.getElementById('telefonoFinal').value = data.telefono;
             document.getElementById('correoFinal').value = data.correo;
+            document.getElementById('fecha_compra').value = data.fecha_compra;
+            document.getElementById('fecha_expiracion').value = data.fecha_expiracion;
             editModalFinal.show();
           });
       });
@@ -204,7 +214,9 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           telefono: document.getElementById('telefonoFinal').value,
-          correo: document.getElementById('correoFinal').value
+          correo: document.getElementById('correoFinal').value,
+          fecha_compra: document.getElementById('fecha_compra').value,
+          fecha_expiracion: document.getElementById('fecha_expiracion').value
         })
       })
       .then(res => res.json())
