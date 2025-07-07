@@ -133,17 +133,19 @@ def nuevo_cliente():
     if request.method == 'POST':
         nombre = request.form['nombre']
         telefono = request.form['telefono']
-        correo = request.form['correo']   # <- Aquí se usaba el `correo`
+        correo = request.form['correo']
 
-        # 🚫 Cliente SIN filtros
+        # ✅ Generar PIN al crear cliente
+        nuevo_pin = str(random.randint(1000, 9999))
+
         nuevo_cliente = Cliente(
             nombre=nombre,
-            telefono=telefono
+            telefono=telefono,
+            pin_restablecer=nuevo_pin   # <-- Aquí lo guardas
         )
         db.session.add(nuevo_cliente)
         db.session.commit()
 
-        # ✅ Cuenta CON filtros
         hoy = datetime.now().date()
         nueva_cuenta = Cuenta(
             correo=correo,
@@ -158,10 +160,11 @@ def nuevo_cliente():
         db.session.add(nueva_cuenta)
         db.session.commit()
 
-        flash('✅ Cliente y cuenta creada correctamente.')
+        flash(f'✅ Cliente creado correctamente. PIN: {nuevo_pin}')
         return redirect(url_for('panel.clientes'))
 
     return render_template('admin/nuevo_cliente.html')
+
 
 # 🚀 Endpoint para AJAX del modal
 @panel_bp.route('/api/cliente/nuevo', methods=['POST'])
