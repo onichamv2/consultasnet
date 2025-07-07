@@ -5,9 +5,9 @@
 {% block content %}
 <h1 class="mb-4 fw-bold">Clientes</h1>
 
-<a href="{{ url_for('panel.nuevo_cliente') }}" class="btn btn-primary mb-3">
+<button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#nuevoClienteModal">
   + Nuevo Cliente
-</a>
+</button>
 
 <table class="table table-bordered">
   <thead class="table-dark text-center">
@@ -62,90 +62,61 @@
 </table>
 
 <!-- ✅ Modal Editar Cliente -->
-<div class="modal fade" id="editClienteModal" tabindex="-1" aria-hidden="true">
+<!-- ✅ Modal NUEVO Cliente -->
+<div class="modal fade" id="nuevoClienteModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form id="editClienteForm">
+      <form id="nuevoClienteForm">
         <div class="modal-header">
-          <h5 class="modal-title">Editar Cliente</h5>
+          <h5 class="modal-title">Nuevo Cliente</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
         <div class="modal-body">
-          <input type="hidden" id="clienteId">
           <div class="mb-3">
             <label>Nombre</label>
-            <input type="text" id="clienteNombre" class="form-control" required>
+            <input type="text" id="nuevoClienteNombre" class="form-control" required>
           </div>
           <div class="mb-3">
             <label>Teléfono</label>
-            <input type="text" id="clienteTelefono" class="form-control" required>
+            <input type="text" id="nuevoClienteTelefono" class="form-control" required>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         </div>
       </form>
     </div>
   </div>
 </div>
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-  const editClienteModal = new bootstrap.Modal(document.getElementById('editClienteModal'));
-  const editClienteForm = document.getElementById('editClienteForm');
+  const nuevoClienteModal = new bootstrap.Modal(document.getElementById('nuevoClienteModal'));
+  const nuevoClienteForm = document.getElementById('nuevoClienteForm');
 
-  // Abrir modal con datos del cliente
-  document.querySelectorAll('.open-edit-cliente').forEach(button => {
-    button.addEventListener('click', () => {
-      const clienteId = button.dataset.id;
-
-      fetch(`/panel/api/cliente/${clienteId}`)
-        .then(response => response.json())
-        .then(data => {
-          document.getElementById('clienteId').value = data.id;
-          document.getElementById('clienteNombre').value = data.nombre;
-          document.getElementById('clienteTelefono').value = data.telefono;
-          editClienteModal.show();
-        });
-    });
-  });
-
-  // Guardar cambios por AJAX
-  editClienteForm.addEventListener('submit', (e) => {
+  nuevoClienteForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    const clienteId = document.getElementById('clienteId').value;
 
-    fetch(`/panel/api/cliente/${clienteId}`, {
+    fetch('/panel/api/cliente/nuevo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        nombre: document.getElementById('clienteNombre').value,
-        telefono: document.getElementById('clienteTelefono').value
+        nombre: document.getElementById('nuevoClienteNombre').value,
+        telefono: document.getElementById('nuevoClienteTelefono').value
       })
     })
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
       if (data.success) {
         location.reload();
       } else {
-        alert('Error al guardar');
+        alert('Error al crear');
       }
     });
   });
-
-  // ✅ Nuevo: Generar PIN sin recargar
-  function generarPin(clienteId) {
-    fetch(`/panel/api/cliente/${clienteId}/generar_pin`, { method: 'POST' })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          document.getElementById(`pin-${clienteId}`).innerText = data.nuevo_pin;
-        } else {
-          alert("❌ Error generando PIN");
-        }
-      });
-  }
 </script>
+
 {% endblock %}
