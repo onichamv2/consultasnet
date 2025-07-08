@@ -562,8 +562,6 @@ def reportar_cuentas(cliente_id):
     telefono = cliente.telefono or ""
     if telefono.startswith("0"):
         telefono = telefono[1:]
-    if not telefono.startswith("51"):
-        telefono = "51" + telefono
 
     whatsapp_link = f"https://wa.me/{telefono}?text={mensaje_encoded}"
 
@@ -581,19 +579,21 @@ def reportar_cuenta_final(cliente_id):
     vencidas = []
     for cuenta in cliente.cuentas:
         if cuenta.fecha_expiracion and cuenta.fecha_expiracion < datetime.now().date():
-            vencidas.append(f"📧 {cuenta.correo}")
+            fecha_fmt = cuenta.fecha_expiracion.strftime('%d/%m/%Y')
+            vencidas.append(f"📧 {cuenta.correo} (Expiró: {fecha_fmt})")
+        elif not cuenta.fecha_expiracion:
+            vencidas.append(f"📧 {cuenta.correo} (Sin fecha de expiración)")
 
-    nombre = cliente.nombre or "🤗"
+    nombre = cliente.nombre or "<3"
 
     if not vencidas:
         mensaje = f" Hola {nombre}, por ahora no tienes cuentas vencidas. "
-        
     else:
         mensaje = (
-            f"👋 Hola :) :\n"
+            f" Hola :) {nombre} :\n"
             f"Tienes estas cuentas vencidas:\n\n"
             + "\n".join(vencidas) +
-            "\n\nPor favor, contáctame para renovarlas y evitar corte de su servicio. :)"
+            "\n\nPor favor, contáctame para renovarlas y evitar corte de su servicio. 🙂"
         )
 
     mensaje_encoded = quote(mensaje)
