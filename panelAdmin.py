@@ -449,17 +449,20 @@ def cuentas_vencidas():
 @login_required
 def buscar_correo():
     correo = request.args.get('correo')
+
     cuenta = Cuenta.query.filter_by(correo=correo).first()
 
     if cuenta:
         if cuenta.cliente_id:
+            # ✅ Redirige a las cuentas del mayorista específico
             return redirect(url_for('panel.cuentas_cliente', cliente_id=cuenta.cliente_id))
         elif cuenta.cliente_final_id:
-            # 👇 Redirige a la vista DETALLE de esa cuenta final
-            return redirect(url_for('panel.detalle_cuenta_final', cuenta_id=cuenta.id))
+            # ✅ Solo redirige a la lista general de clientes finales
+            return redirect(url_for('panel.clientes_finales'))
 
     flash("❌ No se encontró ninguna cuenta con ese correo.")
     return redirect(url_for('panel.dashboard'))
+
 
 
 
