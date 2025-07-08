@@ -408,22 +408,20 @@ def api_update_cuenta(cuenta_id):
 @login_required
 def renovar_cuenta(cuenta_id):
     cuenta = Cuenta.query.get_or_404(cuenta_id)
-    hoy = datetime.now().date()
 
-    # 🔑 Base es HOY si ya venció, o fecha_expiracion si aún está activa
-    base = max(hoy, cuenta.fecha_expiracion)
-    cuenta.fecha_expiracion = base + timedelta(days=30)
+    # ✅ SIEMPRE suma +30 días desde la expiración guardada
+    cuenta.fecha_expiracion = cuenta.fecha_expiracion + timedelta(days=30)
 
-    # ✅ NO TOQUES fecha_compra. Se queda como historial.
-    # ⚡️ Reactiva filtros si quieres:
+    # ⚡️ Reactiva filtros si aplica
     cuenta.filtro_netflix = True
     cuenta.filtro_dispositivo = True
     cuenta.filtro_actualizar_hogar = True
     cuenta.filtro_codigo_temporal = True
 
     db.session.commit()
-    flash('✅ Cuenta renovada +30 días.')
+    flash('✅ Cuenta renovada +30 días desde fecha de expiración.')
     return redirect(url_for('panel.cuentas_cliente', cliente_id=cuenta.cliente_id))
+
 
 @panel_bp.route('/cuentas/eliminar/<int:cuenta_id>', methods=['POST'])
 @login_required
