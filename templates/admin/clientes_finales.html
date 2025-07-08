@@ -64,8 +64,9 @@
 
         {% if cuenta.cliente_final %}
           <form action="{{ url_for('panel.eliminar_cliente_final', cliente_id=cuenta.cliente_final.id) }}"
-                method="POST" style="display:inline;">
-            <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+              method="POST" style="display:inline;"
+              onsubmit="return confirm('¿Estás seguro de que deseas eliminar este cliente final? Esta acción no se puede deshacer.');">
+          <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
           </form>
 
           <a href="{{ url_for('panel.reportar_cuenta_final', cliente_id=cuenta.cliente_final.id) }}"
