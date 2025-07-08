@@ -448,14 +448,20 @@ def cuentas_vencidas():
 @panel_bp.route('/buscar_correo')
 @login_required
 def buscar_correo():
-    cuenta = Cuenta.query.filter_by(correo=request.args.get('correo')).first()
+    correo = request.args.get('correo')
+    cuenta = Cuenta.query.filter_by(correo=correo).first()
+
     if cuenta:
         if cuenta.cliente_id:
             return redirect(url_for('panel.cuentas_cliente', cliente_id=cuenta.cliente_id))
         elif cuenta.cliente_final_id:
-            return redirect(url_for('panel.clientes_finales'))
+            # 👇 Redirige a la vista DETALLE de esa cuenta final
+            return redirect(url_for('panel.detalle_cuenta_final', cuenta_id=cuenta.id))
+
     flash("❌ No se encontró ninguna cuenta con ese correo.")
     return redirect(url_for('panel.dashboard'))
+
+
 
 
 @panel_bp.route('/api/cliente/<int:cliente_id>/generar_pin', methods=['POST'])
