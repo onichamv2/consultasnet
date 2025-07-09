@@ -82,35 +82,48 @@ def buscar():
     correo_input = request.values.get('correo', '').strip().lower()
     pin_input = request.values.get('pin', '').strip()
 
-    # Usa ILIKE en SQLAlchemy: lower(column) == lower(valor)
     cuenta = Cuenta.query.filter(
         db.func.lower(Cuenta.correo) == correo_input
     ).first()
 
     filtros = []
 
-    if cuenta.cliente:  # 🎯 Es un cliente mayorista/premium
-        if cuenta.filtro_dispositivo:
-            # 👇 Aquí validas contra el PIN del cliente
-            if not pin_input or pin_input != str(cuenta.cliente.pin_restablecer):
-                return "❌ PIN inválido o sin permiso."
-            filtros.append("Un nuevo dispositivo está usando tu cuenta")
+    if cuenta:
+        if cuenta.cliente:
+            # 🎯 Cuenta Premium / Mayorista
+            if cuenta.filtro_dispositivo:
+                # ✔ Verificar pin_restablecer del cliente
+                if not pin_input or pin_input != str(cuenta.cliente.pin_restablecer):
+                    return "❌ PIN inválido o sin permiso."
+                filtros.append("Un nuevo dispositivo está usando tu cuenta")
 
-        if cuenta.filtro_netflix:
-            filtros.append("Netflix: Tu código de inicio de sesión")
-        if cuenta.filtro_actualizar_hogar:
-            filtros.append("Confirmación: Se ha confirmado tu Hogar con Netflix")
-        if cuenta.filtro_codigo_temporal:
-            filtros.append("Tu código de acceso temporal de Netflix")
+            if cuenta.filtro_netflix:
+                filtros.append("Netflix: Tu código de inicio de sesión")
+            if cuenta.filtro_actualizar_hogar:
+                filtros.append("Confirmación: Se ha confirmado tu Hogar con Netflix")
+            if cuenta.filtro_codigo_temporal:
+                filtros.append("Tu código de acceso temporal de Netflix")
 
+        elif cuenta.cliente_final:
+            # 🎯 Cuenta Final
+            if cuenta.filtro_dispositivo:
+                # ✔ Verificar pin_final de la cuenta
+                if not pin_input or pin_input != str(cuenta.pin_final):
+                    return "❌ PIN inválido o sin permiso."
+                filtros.append("Un nuevo dispositivo está usando tu cuenta")
+
+            if cuenta.filtro_netflix:
+                filtros.append("Netflix: Tu código de inicio de sesión")
+            if cuenta.filtro_actualizar_hogar:
+                filtros.append("Confirmación: Se ha confirmado tu Hogar con Netflix")
+            if cuenta.filtro_codigo_temporal:
+                filtros.append("Tu código de acceso temporal de Netflix")
+
+        else:
+            return "❌ Esta cuenta no tiene cliente asociado."
 
     else:
-        filtros = [
-            "Netflix: Tu código de inicio de sesión",
-            "Un nuevo dispositivo está usando tu cuenta",
-            "Confirmación: Se ha confirmado tu Hogar con Netflix",
-            "Tu código de acceso temporal de Netflix"
-        ]
+        return "❌ Esta cuenta no existe."
 
     if not filtros:
         return "❌ No hay filtros activos para esta cuenta."
@@ -172,6 +185,7 @@ def buscar():
 
     except Exception as e:
         return f"❌ Error IMAP: {str(e)}"
+
 
 # --------------------------
 # 🚀 Local
