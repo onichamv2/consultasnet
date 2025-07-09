@@ -89,22 +89,20 @@ def buscar():
 
     filtros = []
 
-    if cuenta:
-        cliente = cuenta.cliente
-
-        if not cliente:
-            return "❌ Esta cuenta NO pertenece a un Cliente Premium registrado."
-
-        if cuenta.filtro_netflix:
-            filtros.append("Netflix: Tu código de inicio de sesión")
+    if cuenta.cliente:  # 🎯 Es un cliente mayorista/premium
         if cuenta.filtro_dispositivo:
+            # 👇 Aquí validas contra el PIN del cliente
             if not pin_input or pin_input != str(cuenta.cliente.pin_restablecer):
                 return "❌ PIN inválido o sin permiso."
             filtros.append("Un nuevo dispositivo está usando tu cuenta")
+
+        if cuenta.filtro_netflix:
+            filtros.append("Netflix: Tu código de inicio de sesión")
         if cuenta.filtro_actualizar_hogar:
             filtros.append("Confirmación: Se ha confirmado tu Hogar con Netflix")
         if cuenta.filtro_codigo_temporal:
             filtros.append("Tu código de acceso temporal de Netflix")
+
 
     else:
         filtros = [
