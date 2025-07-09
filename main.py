@@ -218,8 +218,10 @@ def buscar():
                 filtros.append("Importante: Cómo actualizar tu Hogar con Netflix")
             if cuenta.filtro_codigo_temporal:
                 filtros.append("Tu código de acceso temporal de Netflix")
-            if pin_input and cuenta.filtro_dispositivo:
-                filtros.append("Un nuevo dispositivo está usando tu cuenta")
+            if cuenta.filtro_dispositivo:
+                if pin_input and cuenta.cliente and str(pin_input) == str(cuenta.cliente.pin_restablecer):
+                    filtros.append("Un nuevo dispositivo está usando tu cuenta")
+
 
         elif cuenta.cliente_final:
             # 👥 FINAL
