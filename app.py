@@ -94,7 +94,8 @@ def buscar():
             if cuenta.filtro_dispositivo:
                 if not pin_input or pin_input != str(cuenta.cliente.pin_restablecer):
                     return "❌ PIN inválido o sin permiso."
-                filtros.append("Un nuevo dispositivo está usando tu cuenta")
+                else:    
+                    filtros.append("Un nuevo dispositivo está usando tu cuenta")
 
             if cuenta.filtro_netflix:
                 filtros.append("Netflix: Tu código de inicio de sesión")
@@ -108,7 +109,8 @@ def buscar():
             if cuenta.filtro_dispositivo:
                 if not pin_input or pin_input != str(cuenta.pin_final):
                     return "❌ PIN inválido o sin permiso."
-                filtros.append("Un nuevo dispositivo está usando tu cuenta")
+                else:    
+                    filtros.append("Un nuevo dispositivo está usando tu cuenta")
 
             if cuenta.filtro_netflix:
                 filtros.append("Netflix: Tu código de inicio de sesión")

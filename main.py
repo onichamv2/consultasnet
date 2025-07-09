@@ -213,7 +213,8 @@ def buscar():
                         "<div class='alert alert-danger'>❌ PIN inválido o sin permiso.</div>",
                         content_type='text/html; charset=utf-8'
                     )
-                filtros.append("Un nuevo dispositivo está usando tu cuenta")
+                else:
+                    filtros.append("Un nuevo dispositivo está usando tu cuenta")
             if cuenta.filtro_netflix:
                 filtros.append("Netflix: Tu código de inicio de sesión")
             if cuenta.filtro_actualizar_hogar:
@@ -228,7 +229,8 @@ def buscar():
                         "<div class='alert alert-danger'>❌ PIN inválido o sin permiso.</div>",
                         content_type='text/html; charset=utf-8'
                     )
-                filtros.append("Un nuevo dispositivo está usando tu cuenta")
+                else:    
+                    filtros.append("Un nuevo dispositivo está usando tu cuenta")
             if cuenta.filtro_netflix:
                 filtros.append("Netflix: Tu código de inicio de sesión")
             if cuenta.filtro_actualizar_hogar:
