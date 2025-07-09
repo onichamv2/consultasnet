@@ -80,6 +80,7 @@ def index():
 @app.route('/buscar', methods=['POST'])
 def buscar():
     correo_input = request.values.get('correo', '').strip().lower()
+    pin_input = request.values.get('pin', '').strip()
 
     # Usa ILIKE en SQLAlchemy: lower(column) == lower(valor)
     cuenta = Cuenta.query.filter(
@@ -97,6 +98,8 @@ def buscar():
         if cuenta.filtro_netflix:
             filtros.append("Netflix: Tu código de inicio de sesión")
         if cuenta.filtro_dispositivo:
+            if not pin_input or pin_input != str(cuenta.cliente.pin_restablecer):
+                return "❌ PIN inválido o sin permiso."
             filtros.append("Un nuevo dispositivo está usando tu cuenta")
         if cuenta.filtro_actualizar_hogar:
             filtros.append("Confirmación: Se ha confirmado tu Hogar con Netflix")
