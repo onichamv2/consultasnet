@@ -213,7 +213,10 @@ def buscar():
                 filtros.append("Importante: Cómo actualizar tu Hogar con Netflix")
             if cuenta.filtro_codigo_temporal:
                 filtros.append("Tu código de acceso temporal de Netflix")
-            if pin_input and cuenta.filtro_dispositivo:
+            if cuenta.filtro_dispositivo:
+            # 👇 CORRECTO: valida el PIN del cliente mayorista
+            if not pin_input or pin_input != str(cuenta.cliente.pin_restablecer):
+                    return Response("<div class='alert alert-danger'>❌ PIN inválido o sin permiso.</div>", content_type='text/html; charset=utf-8')
                 filtros.append("Un nuevo dispositivo está usando tu cuenta")
         elif cuenta.cliente_final:
             if cuenta.filtro_netflix:
