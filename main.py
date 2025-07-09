@@ -8,7 +8,7 @@ from threading import Thread
 
 from flask import Flask, request, render_template, Response, jsonify
 from flask_login import LoginManager
-from app import app
+#from app import app
 from models import db, Cliente, Cuenta, AdminUser
 from panelAdmin import panel_bp
 
@@ -216,7 +216,8 @@ def buscar():
             if cuenta.filtro_dispositivo:
             # 👇 CORRECTO: valida el PIN del cliente mayorista
             if not pin_input or pin_input != str(cuenta.cliente.pin_restablecer):
-                    return Response("<div class='alert alert-danger'>❌ PIN inválido o sin permiso.</div>", content_type='text/html; charset=utf-8')
+                return Response("<div class='alert alert-danger'>❌ PIN inválido o sin permiso.</div>", content_type='text/html; charset=utf-8')
+            else:    
                 filtros.append("Un nuevo dispositivo está usando tu cuenta")
         elif cuenta.cliente_final:
             if cuenta.filtro_netflix:
