@@ -90,9 +90,8 @@ def buscar():
 
     if cuenta:
         if cuenta.cliente:
-            # 🎯 Cuenta Premium / Mayorista
+            # Es mayorista/premium
             if cuenta.filtro_dispositivo:
-                # ✔ Verificar pin_restablecer del cliente
                 if not pin_input or pin_input != str(cuenta.cliente.pin_restablecer):
                     return "❌ PIN inválido o sin permiso."
                 filtros.append("Un nuevo dispositivo está usando tu cuenta")
@@ -105,9 +104,8 @@ def buscar():
                 filtros.append("Tu código de acceso temporal de Netflix")
 
         elif cuenta.cliente_final:
-            # 🎯 Cuenta Final
+            # Es cliente final
             if cuenta.filtro_dispositivo:
-                # ✔ Verificar pin_final de la cuenta
                 if not pin_input or pin_input != str(cuenta.pin_final):
                     return "❌ PIN inválido o sin permiso."
                 filtros.append("Un nuevo dispositivo está usando tu cuenta")
@@ -121,6 +119,7 @@ def buscar():
 
         else:
             return "❌ Esta cuenta no tiene cliente asociado."
+
 
     else:
         return "❌ Esta cuenta no existe."
