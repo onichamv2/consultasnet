@@ -194,73 +194,101 @@ def consulta_imap_api_thread(correo_input, filtros, opcion, pin_input, resultado
 # --------------------------
 # 📌 Endpoint: /buscar
 # --------------------------
+# --------------------------
+# 📌 Ruta de búsqueda con filtros alineados
+# --------------------------
 @app.route('/buscar', methods=['POST'])
 def buscar():
-    correo_input = request.values.get('correo', '').strip().lower()
-    pin_input = request.values.get('pin', '').strip()
+    correo_input = request.form.get('correo', '').strip().lower()
+    pin_input = request.form.get('pin', '').strip()
 
-    cuenta = Cuenta.query.filter(
-        db.func.lower(Cuenta.correo) == correo_input
-    ).first()
+    if not correo_input:
+        return Response("<div class='alert alert-danger'>❌ Debes enviar un correo válido.</div>", content_type='text/html; charset=utf-8')
+
+    cuenta = Cuenta.query.filter(db.func.lower(Cuenta.correo) == correo_input).first()
 
     filtros = []
 
     if cuenta:
-        if cuenta.cliente:  # 🎯 Cliente mayorista/premium
-            if cuenta.filtro_dispositivo:
-                if not pin_input or pin_input != str(cuenta.cliente.pin_restablecer):
-                    return Response(
-                        "<div class='alert alert-danger'>❌ PIN inválido o sin permiso.</div>",
-                        content_type='text/html; charset=utf-8'
-                    )
-                else:
-                    filtros.append("Un nuevo dispositivo está usando tu cuenta")
+        if cuenta.cliente:
+            # 🎩 PREMIUM
             if cuenta.filtro_netflix:
                 filtros.append("Netflix: Tu código de inicio de sesión")
             if cuenta.filtro_actualizar_hogar:
-                filtros.append("Confirmación: Se ha confirmado tu Hogar con Netflix")
+                filtros.append("Importante: Cómo actualizar tu Hogar con Netflix")
             if cuenta.filtro_codigo_temporal:
                 filtros.append("Tu código de acceso temporal de Netflix")
+            if pin_input and cuenta.filtro_dispositivo:
+                filtros.append("Un nuevo dispositivo está usando tu cuenta")
 
-        elif cuenta.cliente_final:  # 👤 Cliente final
-            if cuenta.filtro_dispositivo:
-                if not pin_input or pin_input != str(cuenta.pin_final):
-                    return Response(
-                        "<div class='alert alert-danger'>❌ PIN inválido o sin permiso.</div>",
-                        content_type='text/html; charset=utf-8'
-                    )
-                else:    
-                    filtros.append("Un nuevo dispositivo está usando tu cuenta")
+        elif cuenta.cliente_final:
+            # 👥 FINAL
             if cuenta.filtro_netflix:
                 filtros.append("Netflix: Tu código de inicio de sesión")
             if cuenta.filtro_actualizar_hogar:
-                filtros.append("Confirmación: Se ha confirmado tu Hogar con Netflix")
+                filtros.append("Importante: Cómo actualizar tu Hogar con Netflix")
             if cuenta.filtro_codigo_temporal:
                 filtros.append("Tu código de acceso temporal de Netflix")
+            # Solo se agrega *Un nuevo dispositivo* si PIN coincide
+            if pin_input:
+                if cuenta.pin_final and cuenta.pin_final == pin_input:
+                    filtros.append("Un nuevo dispositivo está usando tu cuenta")
 
         else:
-            return Response(
-                "<div class='alert alert-danger'>❌ Esta cuenta no tiene cliente asociado.</div>",
-                content_type='text/html; charset=utf-8'
-            )
+            # Cuenta sin cliente asociado
+            return Response("<div class='alert alert-danger'>❌ Esta cuenta no tiene cliente asociado.</div>", content_type='text/html; charset=utf-8')
+
     else:
-        return Response(
-            "<div class='alert alert-danger'>❌ Esta cuenta no existe.</div>",
-            content_type='text/html; charset=utf-8'
-        )
+        return Response("<div class='alert alert-danger'>❌ Esta cuenta no existe.</div>", content_type='text/html; charset=utf-8')
 
     if not filtros:
-        return Response(
-            "<div class='alert alert-warning'>❌ No hay filtros activos para esta cuenta.</div>",
-            content_type='text/html; charset=utf-8'
-        )
+        return Response("<div class='alert alert-danger'>❌ No hay filtros activos para esta cuenta o el PIN no coincide.</div>", content_type='text/html; charset=utf-8')
 
-    # 👉 Tu lógica de IMAP abajo...
-    return Response(
-        "<div class='alert alert-success'>✅ Filtros pasaron correctamente (IMAP aquí)</div>",
-        content_type='text/html; charset=utf-8'
-    )
+    try:
+        mail = imaplib.IMAP4_SSL(IMAP_SERVER, IMAP_PORT)
+        mail.login(IMAP_USER, IMAP_PASS)
+        mail.select("inbox")
 
+        status, data = mail.search(None, f'(TO "{correo_input}")')
+        ids = data[0].split()
+
+        html_body = None
+
+        for num in ids[::-1]:
+            typ, msg_data = mail.fetch(num, '(RFC822)')
+            raw_email = msg_data[0][1]
+            msg = email.message_from_bytes(raw_email)
+
+            asunto = email.header.decode_header(msg["Subject"])[0][0]
+            if isinstance(asunto, bytes):
+                asunto = asunto.decode(errors="replace")
+            asunto = asunto.lower().strip()
+
+            if any(f.lower() in asunto for f in filtros):
+                if msg.is_multipart():
+                    for part in msg.walk():
+                        ctype = part.get_content_type()
+                        charset = part.get_content_charset() or "utf-8"
+                        if ctype == "text/html":
+                            html_body = part.get_payload(decode=True).decode(charset, errors="replace")
+                            break
+                        elif ctype == "text/plain" and not html_body:
+                            html_body = f"<pre>{part.get_payload(decode=True).decode(charset, errors='replace')}</pre>"
+                else:
+                    charset = msg.get_content_charset() or "utf-8"
+                    if msg.get_content_type() == "text/html":
+                        html_body = msg.get_payload(decode=True).decode(charset, errors="replace")
+                    else:
+                        html_body = f"<pre>{msg.get_payload(decode=True).decode(charset, errors='replace')}</pre>"
+                break
+
+        mail.logout()
+        mensaje = html_body or "<div class='alert alert-warning'>✅ No se encontró ningún correo filtrado para este correo.</div>"
+
+    except Exception as e:
+        mensaje = f"<div class='alert alert-danger'>❌ Error IMAP: {str(e)}</div>"
+
+    return Response(mensaje, content_type='text/html; charset=utf-8')
 
 # --------------------------
 # 📌 Endpoint: /api/consulta_hogar
