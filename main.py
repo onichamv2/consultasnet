@@ -241,6 +241,25 @@ def buscar():
     mensaje = resultado.get("html", "<div class='alert alert-warning'>✅ No se encontró ningún correo filtrado para este correo.</div>")
     return Response(mensaje, content_type='text/html; charset=utf-8')
 
+#RECIENTEMENTE AÑADIDO 
+@app.route('/consulta_premium', methods=['GET', 'POST'])
+def consulta_premium():
+    if request.method == 'POST':
+        pin = request.form['pin'].strip()
+        correo = request.form['correo'].strip()
+
+        cliente = Cliente.query.filter_by(pin_restablecer=pin).first()
+        if not cliente:
+            return "❌ PIN inválido."
+
+        cuenta = Cuenta.query.filter_by(cliente_id=cliente.id, correo=correo).first()
+        if not cuenta:
+            return "❌ Correo no asociado a este PIN."
+
+        return render_template('resultado_premium.html', cuenta=cuenta)
+
+    return render_template('consulta_form_premium.html')
+
 
 # --------------------------
 # 📌 Endpoint: /api/consulta_hogar

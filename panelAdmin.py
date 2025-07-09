@@ -463,10 +463,6 @@ def buscar_correo():
     flash("❌ No se encontró ninguna cuenta con ese correo.")
     return redirect(url_for('panel.dashboard'))
 
-
-
-
-
 @panel_bp.route('/api/cliente/<int:cliente_id>/generar_pin', methods=['POST'])
 @login_required
 def api_generar_pin(cliente_id):
