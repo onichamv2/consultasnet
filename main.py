@@ -12,6 +12,7 @@ from flask_login import LoginManager
 from models import db, Cliente, Cuenta, AdminUser
 from panelAdmin import panel_bp
 import time
+from sqlalchemy import cast, Date
 
 # --------------------------
 # 📌 Cargar .env
@@ -372,10 +373,18 @@ def desactivar_filtros_vencidos_periodicamente():
             with app.app_context():
                 hoy = datetime.now().date()
                 limite = hoy - timedelta(days=2)
-                cuentas = Cuenta.query.filter(Cuenta.fecha_expiracion < limite).all()
+
+                cuentas = Cuenta.query.filter(
+                    cast(Cuenta.fecha_expiracion, Date) < limite
+                ).all()
 
                 for cuenta in cuentas:
-                    if cuenta.filtro_netflix or cuenta.filtro_dispositivo or cuenta.filtro_actualizar_hogar or cuenta.filtro_codigo_temporal:
+                    if any([
+                        cuenta.filtro_netflix,
+                        cuenta.filtro_dispositivo,
+                        cuenta.filtro_actualizar_hogar,
+                        cuenta.filtro_codigo_temporal
+                    ]):
                         cuenta.filtro_netflix = False
                         cuenta.filtro_dispositivo = False
                         cuenta.filtro_actualizar_hogar = False
@@ -386,8 +395,7 @@ def desactivar_filtros_vencidos_periodicamente():
         except Exception as e:
             print("❌ Error al desactivar filtros vencidos:", e)
 
-        # Esperar 24 horas
-        sleep(86400)
+        sleep(10)  # Espera 24 horas
 
 # --------------------------
 # 📌 Run
