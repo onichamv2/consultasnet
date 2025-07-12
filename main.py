@@ -206,46 +206,54 @@ def buscar():
         return Response("<div class='alert alert-danger'>❌ Debes enviar un correo válido.</div>", content_type='text/html; charset=utf-8')
 
     cuenta = Cuenta.query.filter(db.func.lower(Cuenta.correo) == correo_input).first()
+
     filtros = []
 
-    if cuenta:
+        if cuenta:
         if cuenta.cliente:
             # 🎩 PREMIUM
+            if not pin_input or str(pin_input) != str(cuenta.cliente.pin_restablecer):
+                return Response("<div class='alert alert-danger'>❌ PIN inválido o sin permiso.</div>", content_type='text/html; charset=utf-8')
 
-            # ❌ FILTRO COMENTADO
-            # if cuenta.filtro_netflix:
-            #     filtros.append("Netflix: Tu código de inicio de sesión")
-
+            # Filtro con PIN ✔️
             if cuenta.filtro_actualizar_hogar:
                 filtros.append("Importante: Cómo actualizar tu Hogar con Netflix")
 
+            # Filtro con PIN ✔️
             if cuenta.filtro_codigo_temporal:
                 filtros.append("Tu código de acceso temporal de Netflix")
 
-            # ❌ FILTRO COMENTADO
+            # 🔕 Filtro comentado: SIN mostrar aunque esté activo
+            # if cuenta.filtro_netflix:
+            #     filtros.append("Netflix: Tu código de inicio de sesión")
+
+            # 🔕 Filtro comentado: NO se usa aunque PIN coincida
             # if cuenta.filtro_dispositivo:
-            #     if pin_input and cuenta.cliente and str(pin_input) == str(cuenta.cliente.pin_restablecer):
-            #         filtros.append("Un nuevo dispositivo está usando tu cuenta")
+            #     filtros.append("Un nuevo dispositivo está usando tu cuenta")
 
         elif cuenta.cliente_final:
-            # 👥 FINAL
+            # 👥 CLIENTE FINAL
+            if not pin_input or pin_input != cuenta.pin_final:
+                return Response("<div class='alert alert-danger'>❌ PIN inválido o sin permiso.</div>", content_type='text/html; charset=utf-8')
 
-            # ❌ FILTRO COMENTADO
-            # if cuenta.filtro_netflix:
-            #     filtros.append("Netflix: Tu código de inicio de sesión")
-
+            # Filtro con PIN ✔️
             if cuenta.filtro_actualizar_hogar:
                 filtros.append("Importante: Cómo actualizar tu Hogar con Netflix")
 
+            # Filtro con PIN ✔️
             if cuenta.filtro_codigo_temporal:
                 filtros.append("Tu código de acceso temporal de Netflix")
 
-            # ❌ FILTRO COMENTADO
-            # if pin_input:
-            #     if cuenta.pin_final and cuenta.pin_final == pin_input:
-            #         filtros.append("Un nuevo dispositivo está usando tu cuenta")
+            # 🔕 Filtro comentado: SIN mostrar aunque esté activo
+            # if cuenta.filtro_netflix:
+            #     filtros.append("Netflix: Tu código de inicio de sesión")
+
+            # 🔕 Filtro comentado: NO se usa aunque PIN coincida
+            # if cuenta.filtro_dispositivo:
+            #     filtros.append("Un nuevo dispositivo está usando tu cuenta")
 
         else:
+            # Cuenta sin cliente asociado
             return Response("<div class='alert alert-danger'>❌ Esta cuenta no tiene cliente asociado.</div>", content_type='text/html; charset=utf-8')
 
     else:
@@ -299,7 +307,6 @@ def buscar():
         mensaje = f"<div class='alert alert-danger'>❌ Error IMAP: {str(e)}</div>"
 
     return Response(mensaje, content_type='text/html; charset=utf-8')
-
 
 # --------------------------
 # 📌 Endpoint: /api/consulta_hogar
