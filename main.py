@@ -318,7 +318,12 @@ def consulta_hogar():
     filtros = []
 
     if cuenta:
+        # PREMIUM
         if cuenta.cliente:
+            pin_valido = str(cuenta.cliente.pin_restablecer)
+            if not pin_input or str(pin_input) != pin_valido:
+                return jsonify({"resultado": "❌ PIN inválido o sin permiso."})
+
             if opcion == "netflix" and cuenta.filtro_netflix:
                 filtros.append("inicio de sesión")
             elif opcion == "actualizar_hogar" and cuenta.filtro_actualizar_hogar:
@@ -326,17 +331,14 @@ def consulta_hogar():
             elif opcion == "codigo_temporal" and cuenta.filtro_codigo_temporal:
                 filtros.append("código de acceso temporal")
             elif opcion == "dispositivo" and cuenta.filtro_dispositivo:
-                if cuenta.cliente:
-                    pin_valido = cuenta.cliente.pin_restablecer
-                else:
-                    pin_valido = cuenta.pin_final  # para clientes finales
-
-                if not pin_input or str(pin_input) != str(pin_valido):
-                    return jsonify({"resultado": "❌ PIN inválido o sin permiso."})
-
                 filtros.append("nuevo dispositivo está usando tu cuenta")
 
+        # CLIENTE FINAL
         elif cuenta.cliente_final:
+            pin_valido = cuenta.pin_final
+            if not pin_input or pin_input != pin_valido:
+                return jsonify({"resultado": "❌ PIN inválido o sin permiso."})
+
             if opcion == "netflix" and cuenta.filtro_netflix:
                 filtros.append("inicio de sesión")
             elif opcion == "actualizar_hogar" and cuenta.filtro_actualizar_hogar:
@@ -344,8 +346,6 @@ def consulta_hogar():
             elif opcion == "codigo_temporal" and cuenta.filtro_codigo_temporal:
                 filtros.append("código de acceso temporal")
             elif opcion == "dispositivo" and cuenta.filtro_dispositivo:
-                if not pin_input or cuenta.pin_final != pin_input:
-                    return jsonify({"resultado": "❌ PIN inválido o sin permiso."})
                 filtros.append("nuevo dispositivo está usando tu cuenta")
         else:
             return jsonify({"resultado": "❌ Esta cuenta no tiene cliente asociado."})
