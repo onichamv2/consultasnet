@@ -366,36 +366,6 @@ def consulta_hogar():
 
     return jsonify({"resultado": resultado.get("msg", "✅ No se encontró correo válido para esta consulta.")})
 
-def desactivar_filtros_vencidos_periodicamente():
-    from time import sleep
-    while True:
-        try:
-            with app.app_context():
-                hoy = datetime.now().date()
-                limite = hoy - timedelta(days=2)
-
-                cuentas = Cuenta.query.filter(
-                    cast(Cuenta.fecha_expiracion, Date) < limite
-                ).all()
-
-                for cuenta in cuentas:
-                    if any([
-                        cuenta.filtro_netflix,
-                        cuenta.filtro_dispositivo,
-                        cuenta.filtro_actualizar_hogar,
-                        cuenta.filtro_codigo_temporal
-                    ]):
-                        cuenta.filtro_netflix = False
-                        cuenta.filtro_dispositivo = False
-                        cuenta.filtro_actualizar_hogar = False
-                        cuenta.filtro_codigo_temporal = False
-                        print(f"⛔ Filtros desactivados de: {cuenta.correo} (expiró: {cuenta.fecha_expiracion})")
-
-                db.session.commit()
-        except Exception as e:
-            print("❌ Error al desactivar filtros vencidos:", e)
-
-        sleep(10)  # Espera 24 horas
 
 # --------------------------
 # 📌 Run
@@ -403,7 +373,5 @@ def desactivar_filtros_vencidos_periodicamente():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all() 
-        # 🧠 Lanzar hilo para desactivar filtros vencidos
-        Thread(target=desactivar_filtros_vencidos_periodicamente, daemon=True).start()
 
     app.run(host="0.0.0.0", port=5000, debug=True)
