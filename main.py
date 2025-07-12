@@ -12,7 +12,7 @@ from flask_login import LoginManager
 from models import db, Cliente, Cuenta, AdminUser
 from panelAdmin import panel_bp
 import time
-from sqlalchemy import cast, Date
+
 
 # --------------------------
 # 📌 Cargar .env
