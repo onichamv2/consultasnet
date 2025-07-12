@@ -11,7 +11,7 @@ from flask_login import LoginManager
 #from app import app
 from models import db, Cliente, Cuenta, AdminUser
 from panelAdmin import panel_bp
-
+import time
 
 # --------------------------
 # 📌 Cargar .env
@@ -253,7 +253,10 @@ def buscar():
         return Response("<div class='alert alert-danger'>❌ Esta cuenta no existe.</div>", content_type='text/html; charset=utf-8')
 
     if not filtros:
-        return Response("<div class='alert alert-danger'>❌ No hay filtros activos para esta cuenta o el PIN no coincide.</div>", content_type='text/html; charset=utf-8')
+        return Response(
+            "<div class='alert alert-warning'>❌ Consultas Desactivadas :( </div>",
+            content_type='text/html; charset=utf-8'
+        )
 
     try:
         mail = imaplib.IMAP4_SSL(IMAP_SERVER, IMAP_PORT)
@@ -353,7 +356,8 @@ def consulta_hogar():
         return jsonify({"resultado": "❌ Esta cuenta no existe."})
 
     if not filtros:
-        return jsonify({"resultado": "❌ No hay filtros activos o no coincide."})
+        return jsonify({"resultado": "❌ Consultas Desactivadas :( "})
+
 
     resultado = {}
     Thread(target=consulta_imap_api_thread, args=(correo_input, filtros, opcion, pin_input, resultado)).start()
@@ -361,11 +365,37 @@ def consulta_hogar():
 
     return jsonify({"resultado": resultado.get("msg", "✅ No se encontró correo válido para esta consulta.")})
 
+def desactivar_filtros_vencidos_periodicamente():
+    from time import sleep
+    while True:
+        try:
+            with app.app_context():
+                hoy = datetime.now().date()
+                limite = hoy - timedelta(days=2)
+                cuentas = Cuenta.query.filter(Cuenta.fecha_expiracion < limite).all()
+
+                for cuenta in cuentas:
+                    if cuenta.filtro_netflix or cuenta.filtro_dispositivo or cuenta.filtro_actualizar_hogar or cuenta.filtro_codigo_temporal:
+                        cuenta.filtro_netflix = False
+                        cuenta.filtro_dispositivo = False
+                        cuenta.filtro_actualizar_hogar = False
+                        cuenta.filtro_codigo_temporal = False
+                        print(f"⛔ Filtros desactivados de: {cuenta.correo} (expiró: {cuenta.fecha_expiracion})")
+
+                db.session.commit()
+        except Exception as e:
+            print("❌ Error al desactivar filtros vencidos:", e)
+
+        # Esperar 24 horas
+        sleep(86400)
 
 # --------------------------
 # 📌 Run
 # --------------------------
 if __name__ == "__main__":
     with app.app_context():
-        db.create_all()
+        db.create_all() 
+        # 🧠 Lanzar hilo para desactivar filtros vencidos
+        Thread(target=desactivar_filtros_vencidos_periodicamente, daemon=True).start()
+
     app.run(host="0.0.0.0", port=5000, debug=True)
