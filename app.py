@@ -90,30 +90,32 @@ def buscar():
 
     if cuenta:
         if cuenta.cliente:
-            # Es mayorista/premium
-            if cuenta.filtro_dispositivo:
-                if not pin_input or pin_input != str(cuenta.cliente.pin_restablecer):
-                    return "❌ PIN inválido o sin permiso."
-                else:    
-                    filtros.append("Un nuevo dispositivo está usando tu cuenta")
+            # ✅ Mayorista/premium
+            if not pin_input or pin_input != str(cuenta.cliente.pin_restablecer):
+                return "❌ PIN inválido o sin permiso."
 
-            if cuenta.filtro_netflix:
-                filtros.append("Netflix: Tu código de inicio de sesión")
+            # if cuenta.filtro_dispositivo:
+            #     filtros.append("Un nuevo dispositivo está usando tu cuenta")
+
+            # if cuenta.filtro_netflix:
+            #     filtros.append("Netflix: Tu código de inicio de sesión")
+
             if cuenta.filtro_actualizar_hogar:
                 filtros.append("Confirmación: Se ha confirmado tu Hogar con Netflix")
             if cuenta.filtro_codigo_temporal:
                 filtros.append("Tu código de acceso temporal de Netflix")
 
         elif cuenta.cliente_final:
-            # Es cliente final
-            if cuenta.filtro_dispositivo:
-                if not pin_input or pin_input != str(cuenta.pin_final):
-                    return "❌ PIN inválido o sin permiso."
-                else:    
-                    filtros.append("Un nuevo dispositivo está usando tu cuenta")
+            # ✅ Cliente final
+            if not pin_input or pin_input != str(cuenta.pin_final):
+                return "❌ PIN inválido o sin permiso."
 
-            if cuenta.filtro_netflix:
-                filtros.append("Netflix: Tu código de inicio de sesión")
+            # if cuenta.filtro_dispositivo:
+            #     filtros.append("Un nuevo dispositivo está usando tu cuenta")
+
+            # if cuenta.filtro_netflix:
+            #     filtros.append("Netflix: Tu código de inicio de sesión")
+
             if cuenta.filtro_actualizar_hogar:
                 filtros.append("Confirmación: Se ha confirmado tu Hogar con Netflix")
             if cuenta.filtro_codigo_temporal:
@@ -121,13 +123,14 @@ def buscar():
 
         else:
             return "❌ Esta cuenta no tiene cliente asociado."
-
-
     else:
         return "❌ Esta cuenta no existe."
 
     if not filtros:
         return "❌ No hay filtros activos para esta cuenta."
+
+    # ⬇️ aquí sigue igual toda la lógica IMAP...
+
 
     print("========== DEBUG ==========")
     print(f"Correo buscado: {correo_input}")
