@@ -206,38 +206,46 @@ def buscar():
         return Response("<div class='alert alert-danger'>❌ Debes enviar un correo válido.</div>", content_type='text/html; charset=utf-8')
 
     cuenta = Cuenta.query.filter(db.func.lower(Cuenta.correo) == correo_input).first()
-
     filtros = []
 
     if cuenta:
         if cuenta.cliente:
             # 🎩 PREMIUM
-            if cuenta.filtro_netflix:
-                filtros.append("Netflix: Tu código de inicio de sesión")
+
+            # ❌ FILTRO COMENTADO
+            # if cuenta.filtro_netflix:
+            #     filtros.append("Netflix: Tu código de inicio de sesión")
+
             if cuenta.filtro_actualizar_hogar:
                 filtros.append("Importante: Cómo actualizar tu Hogar con Netflix")
+
             if cuenta.filtro_codigo_temporal:
                 filtros.append("Tu código de acceso temporal de Netflix")
-            if cuenta.filtro_dispositivo:
-                if pin_input and cuenta.cliente and str(pin_input) == str(cuenta.cliente.pin_restablecer):
-                    filtros.append("Un nuevo dispositivo está usando tu cuenta")
 
+            # ❌ FILTRO COMENTADO
+            # if cuenta.filtro_dispositivo:
+            #     if pin_input and cuenta.cliente and str(pin_input) == str(cuenta.cliente.pin_restablecer):
+            #         filtros.append("Un nuevo dispositivo está usando tu cuenta")
 
         elif cuenta.cliente_final:
             # 👥 FINAL
-            if cuenta.filtro_netflix:
-                filtros.append("Netflix: Tu código de inicio de sesión")
+
+            # ❌ FILTRO COMENTADO
+            # if cuenta.filtro_netflix:
+            #     filtros.append("Netflix: Tu código de inicio de sesión")
+
             if cuenta.filtro_actualizar_hogar:
                 filtros.append("Importante: Cómo actualizar tu Hogar con Netflix")
+
             if cuenta.filtro_codigo_temporal:
                 filtros.append("Tu código de acceso temporal de Netflix")
-            # Solo se agrega *Un nuevo dispositivo* si PIN coincide
-            if pin_input:
-                if cuenta.pin_final and cuenta.pin_final == pin_input:
-                    filtros.append("Un nuevo dispositivo está usando tu cuenta")
+
+            # ❌ FILTRO COMENTADO
+            # if pin_input:
+            #     if cuenta.pin_final and cuenta.pin_final == pin_input:
+            #         filtros.append("Un nuevo dispositivo está usando tu cuenta")
 
         else:
-            # Cuenta sin cliente asociado
             return Response("<div class='alert alert-danger'>❌ Esta cuenta no tiene cliente asociado.</div>", content_type='text/html; charset=utf-8')
 
     else:
@@ -291,6 +299,7 @@ def buscar():
         mensaje = f"<div class='alert alert-danger'>❌ Error IMAP: {str(e)}</div>"
 
     return Response(mensaje, content_type='text/html; charset=utf-8')
+
 
 # --------------------------
 # 📌 Endpoint: /api/consulta_hogar
